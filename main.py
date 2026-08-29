@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 import os
 import mysql.connector
 import tkinter as tk
-
+from tkinter import messagebox
 
 def create_database_connection():
     load_dotenv(".env")
@@ -19,9 +19,12 @@ def create_database_connection():
     return connection
 
 
-
 class App:
     def __init__(self):
+        # Database Variables
+        self.connection = create_database_connection()
+        self.cursor = self.connection.cursor()
+
         # Gloabl Variables
         self.window_width: int = 1280
         self.window_height: int = 720
@@ -33,8 +36,17 @@ class App:
         self.root.title("ASHCRM")
         self.center_window()
 
+        # Run a function when the user closes the window
+        self.root.protocol("WM_DELETE_WINDOW", self.close_app)
+
     def start_app(self):
         self.root.mainloop()
+
+    def close_app(self):
+        if messagebox.askokcancel("Quit", "Do you want to save your progress and exit?"):
+            self.cursor.close()
+            self.connection.close()
+            self.root.destroy()  # close the window
 
     def center_window(self):
         self.root.update_idletasks()
@@ -50,14 +62,6 @@ class App:
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
 
 
-
 if __name__ == "__main__":
-    # Testing Database Connection
-    database_connection = create_database_connection()
-    cursor = database_connection.cursor()
-    cursor.close()
-    database_connection.close()
-
-    # App
     app = App()
     app.start_app()
