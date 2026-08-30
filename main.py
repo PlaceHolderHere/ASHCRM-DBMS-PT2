@@ -1,5 +1,3 @@
-import tkinter
-
 from dotenv import load_dotenv
 import os
 import mysql.connector
@@ -52,7 +50,7 @@ class App:
             self.connection.close()
             self.root.destroy()  # close the window
 
-    def on_configure(self, event: tkinter.Event) -> None:
+    def on_configure(self, event: tk.Event) -> None:
         if event.widget != self.root:
             return
 
