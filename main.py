@@ -3,6 +3,8 @@ import os
 import mysql.connector
 import tkinter as tk
 from tkinter import messagebox
+from pages.home_page import HomePage
+from pages.patients_page import PatientsPage
 
 def create_database_connection():
     load_dotenv(".env")
@@ -31,18 +33,47 @@ class App:
         self.viewWidth = self.window_width / 100
         self.viewHeight = self.window_height / 100
         self._resize_timer = None
+        self.pages = {
+            "HOME": HomePage,
+            "PATIENTS": PatientsPage
+        }
+        self.loaded_pages = {}
 
         # Tkinter Initialization
         self.root = tk.Tk()
         self.root.title("ASHCRM")
         self.center_window()
 
+        # Full Window Container for all content
+        self.content_container = tk.Frame(self.root)
+        self.content_container.pack(side="top", fill="both", expand=True)
+
+        self.content_container.grid_rowconfigure(0, weight=1)
+        self.content_container.grid_columnconfigure(0, weight=1)
+
         # Run a function when the user:
         self.root.protocol("WM_DELETE_WINDOW", self.close_app) # Closes the window
         self.root.bind("<Configure>", self.on_configure) # Resizing the window
 
     def start_app(self):
+        self.load_pages()
+        self.render_page("HOME")
         self.root.mainloop()
+
+    def load_pages(self):
+        for key, page in self.pages.items():
+            loaded_page = page(self.content_container, self)
+            self.loaded_pages[key] = loaded_page
+            loaded_page.grid(row=0, column=0, sticky="nsew")
+
+    def render_page(self, page) -> bool:
+        fetched_page = self.loaded_pages.get(page)
+        if fetched_page is None:
+            print(f"Error, {page} page not found")
+            return False
+
+        fetched_page.tkraise()
+        return True
 
     def close_app(self):
         if messagebox.askokcancel("Quit", "Do you want to save your progress and exit?"):
