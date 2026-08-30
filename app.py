@@ -1,5 +1,5 @@
 import tkinter as tk
-from database_connection import create_database_connection
+from database_connection import create_database_connection, get_env_variables
 from tkinter import messagebox
 from pages.home_page import HomePage
 from pages.patients_page import PatientsPage
@@ -7,7 +7,8 @@ from pages.patients_page import PatientsPage
 class App:
     def __init__(self):
         # Database Variables
-        self.connection = create_database_connection()
+        env_variables = get_env_variables(".env")
+        self.connection = create_database_connection(env_variables)
         self.cursor = self.connection.cursor()
 
         # Gloabl Variables
