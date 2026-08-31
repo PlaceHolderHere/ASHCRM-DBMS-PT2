@@ -3,6 +3,7 @@ from database_connection import create_database_connection, get_env_variables
 from tkinter import messagebox
 from pages.home_page import HomePage
 from pages.patients_page import PatientsPage
+from pages.login_page import LogInPage
 
 class App:
     def __init__(self):
@@ -19,7 +20,8 @@ class App:
         self._resize_timer = None
         self.pages = {
             "HOME": HomePage,
-            "PATIENTS": PatientsPage
+            "PATIENTS": PatientsPage,
+            "LOGIN": LogInPage
         }
         self.loaded_pages = {}
 
@@ -41,7 +43,7 @@ class App:
 
     def start_app(self):
         self.load_pages()
-        self.render_page("HOME")
+        self.render_page("LOGIN")
         self.root.mainloop()
 
     def load_pages(self):
