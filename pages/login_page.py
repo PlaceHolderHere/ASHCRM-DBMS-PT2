@@ -58,7 +58,13 @@ class LogInPage(tk.Frame):
 
         # Temporary Authentication
         if username == "admin" and password == "0000":
-            controller.render_page("HOME")  # Sends user to home page
+            controller.render_page("QR")  # Sends user to home page
             messagebox.showinfo("Login Successful", f"Welcome {username}")
         else:
             messagebox.showerror("Login Failed", "Invalid username or password.")
+
+    def fetch_authentication_data(self):
+        ...
+
+    def verify_password(self, password: str) -> bool:
+        ...

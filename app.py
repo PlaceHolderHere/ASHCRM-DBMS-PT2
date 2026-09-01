@@ -4,6 +4,7 @@ from tkinter import messagebox
 from pages.home_page import HomePage
 from pages.patients_page import PatientsPage
 from pages.login_page import LogInPage
+from qr_scanner import QrScanner
 
 class App:
     def __init__(self):
@@ -21,7 +22,8 @@ class App:
         self.pages = {
             "HOME": HomePage,
             "PATIENTS": PatientsPage,
-            "LOGIN": LogInPage
+            "LOGIN": LogInPage,
+            "QR": QrScanner
         }
         self.loaded_pages = {}
 
