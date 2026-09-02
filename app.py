@@ -48,13 +48,23 @@ class App:
             print(f"Error, {page} page not found")
             return False
 
+        # Start Webcam for QR Scanner
+        elif page == "QR":
+            fetched_page.update_webcam()
         fetched_page.tkraise()
         return True
 
     def close_app(self):
         if messagebox.askokcancel("Quit", "Do you want to save your progress and exit?"):
+            # Close Database Connection
             self.cursor.close()
             self.connection.close()
+
+            # Close QR Scanner Webcam
+            qr_scanner_page = self.loaded_pages.get("QR")
+            if qr_scanner_page.cap.isOpened():
+                qr_scanner_page.cap.release()
+
             self.root.destroy()  # close the window
 
     def on_configure(self, event: tk.Event) -> None:

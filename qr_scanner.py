@@ -14,6 +14,8 @@ class QrScanner(tk.Frame):
 
         # Variables
         self.is_running = True
+        self.camera_read = False
+        self._webcam_update = None
 
         # Components
         title = ttk.Label(self, text="Please Scan the QR Code")
@@ -31,6 +33,9 @@ class QrScanner(tk.Frame):
         self.result_label = ttk.Label(self.info_frame, textvariable=self.result_var)
         self.result_label.pack(anchor="w", pady=2)
 
+        home_button = ttk.Button(self, text="Home", command=self.close_qr_scanner)
+        home_button.pack(anchor="w", padx=8)
+
         # Connect to Camera in the background (prevents program from freezing)
         threading.Thread(target=self._init_camera, daemon=True).start()
 
@@ -44,10 +49,10 @@ class QrScanner(tk.Frame):
     def _camera_ready(self, cap):
         self.cap = cap
         if self.cap.isOpened():
-            self.update_webcam()
+            self.camera_ready = True
 
     def update_webcam(self):
-        if not self.is_running or not self.cap or not self.cap.isOpened():
+        if not self.is_running or not self.cap or not self.cap.isOpened() or not self.camera_ready:
             return
 
         frame_recorded, frame = self.cap.read()
@@ -69,7 +74,7 @@ class QrScanner(tk.Frame):
             self.webcam_video_frame.configure(image=imgtk)
 
         # Update the frame every 30ms~
-        self.controller.root.after(30, self.update_webcam)
+        self._webcam_update = self.controller.root.after(30, self.update_webcam)
 
     @staticmethod
     def read_qr(frame) -> str:
@@ -87,6 +92,7 @@ class QrScanner(tk.Frame):
 
         return qr_data
 
-    def on_close(self):
-        if self.cap.isOpened():
-            self.cap.release()
+    def close_qr_scanner(self):
+        if self._webcam_update is not None:
+            self.controller.root.after_cancel(self._webcam_update)
+        self.controller.render_page("HOME")
