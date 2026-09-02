@@ -43,6 +43,7 @@ class App:
 
     def render_page(self, page) -> bool:
         fetched_page = self.loaded_pages.get(page)
+        globals.current_page = page
         if fetched_page is None:
             print(f"Error, {page} page not found")
             return False
