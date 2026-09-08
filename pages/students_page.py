@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import ttk
+from tkinter import messagebox
 import mysql.connector
 import csv
 import json
@@ -36,21 +37,35 @@ class StudentsPage(tk.Frame):
 
         self.insert_csv_to_database(rows)
 
-    def insert_csv_to_database(self, data):
-        cleaned_data = [{
-            "name": row.get("name"),
-            "section": row.get("section"),
-            "address": row.get("address"),
-            "date_of_birth": row.get("date_of_birth"),
-            "religion": row.get("religion"),
-            "nationality": row.get("nationality"),
-            "emergency_contact_number": row.get("emergency_contact_number"),
-            "family_history": self.validate_json_string(row.get("family_history")),
-            "medical_history": self.validate_json_string(row.get("medical_history")),
-            "immunizations": self.validate_json_string(row.get("immunizations")),
-            "psychosocial_history": self.validate_json_string(row.get("psychosocial_history")),
-            "sexual_history": self.validate_json_string(row.get("sexual_history"))
-        } for row in data]
+    def insert_csv_to_database(self, data) -> bool:
+        cleaned_data = []
+
+        for row_index, row in enumerate(data):
+            family_history = self.validate_json_string(row.get("family_history"))
+            medical_history = self.validate_json_string(row.get("medical_history"))
+            immunizations = self.validate_json_string(row.get("immunizations"))
+            psychosocial_history = self.validate_json_string(row.get("psychosocial_history"))
+            sexual_history = self.validate_json_string(row.get("sexual_history"))
+
+            if any(x is None for x in (family_history, medical_history, immunizations,
+                                       psychosocial_history, sexual_history)):
+                messagebox.showerror("ERROR! Failed to Upload CSV", f"ERROR! Invalid JSON inputted")
+                return False
+
+            cleaned_data.append({
+                "name": row.get("name"),
+                "section": row.get("section"),
+                "address": row.get("address"),
+                "date_of_birth": row.get("date_of_birth"),
+                "religion": row.get("religion"),
+                "nationality": row.get("nationality"),
+                "emergency_contact_number": row.get("emergency_contact_number"),
+                "family_history": family_history,
+                "medical_history": medical_history,
+                "immunizations": immunizations,
+                "psychosocial_history": psychosocial_history,
+                "sexual_history": sexual_history
+            })
 
         query = """
             INSERT INTO student (name, section, address, date_of_birth, religion, nationality,
@@ -64,13 +79,21 @@ class StudentsPage(tk.Frame):
         try:
             self.controller.cursor.executemany(query, cleaned_data)
             self.controller.connection.commit()
-        except mysql.connector.Error as e:
-            print(f"Error: {e}")
-            self.controller.connection.rollback()
+            messagebox.showinfo("Upload Successful!", "Successfully Uploaded Student Profiles into Database")
+            return True
 
-    @staticmethod
-    def validate_json_string(json_string: str) -> str | None:
+        except mysql.connector.Error as e:
+            messagebox.showerror("ERROR! Failed to Upload CSV", f"Error Message: {e}")
+            self.controller.connection.rollback()
+            return False
+
+    def validate_json_string(self, json_string: str) -> str | None:
         if json_string is None:
             return None
 
-        return json.dumps(json.loads(json_string))
+        try:
+            output = json.dumps(json.loads(json_string))
+        except:
+            return None
+
+        return output
