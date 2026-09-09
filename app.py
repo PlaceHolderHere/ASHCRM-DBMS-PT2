@@ -62,8 +62,9 @@ class App:
 
             # Close QR Scanner Webcam
             qr_scanner_page = self.loaded_pages.get("QR")
-            if qr_scanner_page.cap.isOpened():
-                qr_scanner_page.cap.release()
+            if qr_scanner_page.cap is not None:
+                if qr_scanner_page.cap.isOpened():
+                    qr_scanner_page.cap.release()
 
             self.root.destroy()  # close the window
 
