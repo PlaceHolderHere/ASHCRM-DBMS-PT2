@@ -4,6 +4,7 @@ from pages.patients_page import PatientsPage
 from pages.login_page import LogInPage
 from pages.students_page import StudentsPage
 from qr_scanner import QrScanner
+from tkinter import ttk
 
 # List of all global variables and constants that can be accessed by all python files
 PRIMARY_COLOR = "#aecfe4"
@@ -22,3 +23,22 @@ pages = {
     "QR": QrScanner,
     "STUDENTS": StudentsPage
 }
+
+def init_ttk_styles():
+    # Entries
+    entry_style = ttk.Style()
+    entry_style.theme_use("clam") # For custom border and background doverrides
+    entry_style.configure(
+        "ENTRY.TEntry",
+        font=("Helvetica", 11),
+        bordercolor=PRIMARY_COLOR,
+        relief="solid",
+        padding=4,
+    )
+
+    entry_style.map(
+        "Custom.TEntry",
+        bordercolor=[
+            ("focus", ACCENT_COLOR)
+        ]
+    )

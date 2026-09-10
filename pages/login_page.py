@@ -35,7 +35,7 @@ class LogInPage(tk.Frame):
             text="ASHCRM",
             font=("Helvetica", 36, "bold"),
             fg=globals.BACKGROUND_COLOR,
-            bg=globals.ACCENT_COLOR,
+            bg=globals.ACCENT_COLOR
         )
         title_label.pack()
 
@@ -98,14 +98,9 @@ class LogInPage(tk.Frame):
         )
         user_label.pack(fill="x", pady=(12, 0))
 
-        self.username_entry = tk.Entry(
+        self.username_entry = ttk.Entry(
             login_frame,
-            font=("Helvetica", 11),
-            bd=0,
-            relief="solid",
-            highlightthickness=1,
-            highlightbackground=globals.PRIMARY_COLOR,
-            highlightcolor=globals.ACCENT_COLOR
+            style="ENTRY.TEntry"
         )
         self.username_entry.pack(fill="x", ipady=4)
 
@@ -120,15 +115,10 @@ class LogInPage(tk.Frame):
         )
         pass_label.pack(fill="x", pady=(12, 0))
 
-        self.password_entry = tk.Entry(
+        self.password_entry = ttk.Entry(
             login_frame,
-            font=("Helvetica", 11),
-            show="•",
-            bd=0,
-            relief="solid",
-            highlightthickness=1,
-            highlightbackground = globals.PRIMARY_COLOR,
-            highlightcolor= globals.ACCENT_COLOR
+            style="ENTRY.TEntry",
+            show="•"
         )
         self.password_entry.pack(fill="x", ipady=4)
 

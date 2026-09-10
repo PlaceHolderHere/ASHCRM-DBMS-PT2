@@ -18,6 +18,7 @@ class App:
         self.root = tk.Tk()
         self.root.title("ASHCRM")
         self.center_window()
+        globals.init_ttk_styles()
 
         # Full Window Container for all content
         self.content_container = tk.Frame(self.root)
