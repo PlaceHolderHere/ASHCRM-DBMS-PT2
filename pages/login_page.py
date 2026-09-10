@@ -148,18 +148,12 @@ class LogInPage(tk.Frame):
         show_password_checkbox.pack(fill="x", pady=(8, 0))
 
         # Login Button
-        login_btn = tk.Button(
+        login_btn = ttk.Button(
             login_frame,
             text="Sign In",
-            font=("Helvetica", 11, "bold"),
-            bd=0,
-            cursor="hand2",
             command=lambda: self.login_user(controller),
-            fg = globals.BACKGROUND_COLOR,
-            bg = globals.ACCENT_COLOR,
-            highlightthickness=2,
-            activebackground=globals.ACCENT_DARK,
-            activeforeground=globals.BACKGROUND_COLOR
+            style="BTN.TButton",
+            cursor="hand2"
         )
         login_btn.pack(fill="x", ipady=8, pady=(32, 0))
 

@@ -5,6 +5,7 @@ from tkinter import messagebox
 import mysql.connector
 import csv
 import json
+import globals
 
 class StudentsPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -13,10 +14,21 @@ class StudentsPage(tk.Frame):
 
         tk.Label(self, text="Students Page", font=("Arial", 18), bg="#ecf0f1").pack(pady=20)
 
-        home_button = tk.Button(self, text="Go to Home Page",
-                            command=lambda: self.controller.render_page("HOME"))
+        home_button = ttk.Button(
+            self,
+            text="Go to Home Page",
+            command=lambda: self.controller.render_page("HOME"),
+            style="BTN.TButton",
+            cursor="hand2"
+        )
         home_button.pack()
-        upload_button = ttk.Button(self, text="Upload a CSV", command=self.upload_csv)
+        upload_button = ttk.Button(
+            self,
+            text="Upload a CSV",
+            command=self.upload_csv,
+            style="BTN.TButton",
+            cursor="hand2"
+        )
         upload_button.pack()
 
     def upload_csv(self):

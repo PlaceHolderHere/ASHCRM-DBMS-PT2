@@ -46,3 +46,22 @@ def init_ttk_styles():
             ("focus", ACCENT_COLOR)
         ]
     )
+
+    button_style = ttk.Style()
+    button_style.configure(
+        "BTN.TButton",
+        foreground=BACKGROUND_COLOR,
+        background=ACCENT_COLOR,
+        focusthickness=2,
+        font=("Helvetica", 11, "bold"),
+        padding=(8, 4),
+        borderwidth=1,
+        relief="flat",
+    )
+    button_style.map(
+        "BTN.TButton",
+        background=[
+            ("active", ACCENT_DARK),  # Color when clicked
+            ("hover", ACCENT_DARK)  # Color on mouse hover
+        ]
+    )

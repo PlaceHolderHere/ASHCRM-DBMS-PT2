@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 import mysql.connector
+import globals
 
 class StaffPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -19,11 +20,12 @@ class StaffPage(tk.Frame):
         )
 
         # Home
-        home_button = tk.Button(
+        home_button = ttk.Button(
             search_frame,
             text="← Home",
-            anchor="center",
-            command=lambda : controller.render_page("HOME"))
+            command=lambda : controller.render_page("HOME"),
+            style = "BTN.TButton",
+            cursor = "hand2")
         home_button.pack(side="left")
 
         tk.Label(
@@ -44,22 +46,26 @@ class StaffPage(tk.Frame):
             side="left"
         )
 
-        tk.Button(
+        ttk.Button(
             search_frame,
             text="Search",
             width=12,
-            command=self.search_records
+            command=self.search_records,
+            style="BTN.TButton",
+            cursor="hand2"
         ).pack(
             side="left",
             padx=4
         )
 
         # Show All Button
-        tk.Button(
+        ttk.Button(
             search_frame,
             text="Show All",
             width=12,
-            command=self.load_records
+            command=self.load_records,
+            style="BTN.TButton",
+            cursor="hand2"
         ).pack(
             side="left"
         )
