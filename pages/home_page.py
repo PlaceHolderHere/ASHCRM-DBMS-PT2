@@ -14,5 +14,8 @@ class HomePage(tk.Frame):
         students_button.pack()
 
         scanner_button = tk.Button(self, text="Open QR Code Scanner",
-                                    command=lambda: controller.render_page("QR"))
+                                   command=lambda: controller.render_page("QR"))
         scanner_button.pack()
+        staff_button = tk.Button(self, text="Staff",
+                                   command=lambda: controller.render_page("STAFF"))
+        staff_button.pack()

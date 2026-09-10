@@ -4,6 +4,9 @@ from pages.patients_page import PatientsPage
 from pages.login_page import LogInPage
 from pages.students_page import StudentsPage
 from qr_scanner import QrScanner
+from pages.staff_page import StaffPage
+
+# Imports
 from tkinter import ttk
 
 # List of all global variables and constants that can be accessed by all python files
@@ -21,7 +24,8 @@ pages = {
     "PATIENTS": PatientsPage,
     "LOGIN": LogInPage,
     "QR": QrScanner,
-    "STUDENTS": StudentsPage
+    "STUDENTS": StudentsPage,
+    "STAFF": StaffPage
 }
 
 def init_ttk_styles():
