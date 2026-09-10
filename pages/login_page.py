@@ -1,50 +1,177 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import globals
 
 class LogInPage(tk.Frame):
     def __init__(self, parent, controller):
         # TK Init
         tk.Frame.__init__(self, parent)
 
-        # Components
-        login_frame = tk.Frame(self, padx=30, pady=30)
-        login_frame.place(relx=0.5, rely=0.5, anchor="center")
+        # Causes the grid in self to fill up the entire window evenly
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1, uniform="group1")
+        self.columnconfigure(1, weight=1, uniform="group1")
 
-        title_label = tk.Label(login_frame, text="Sign In")
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        # Left Frame
+        left_frame = tk.Frame(self, bg=globals.ACCENT_COLOR)
+        left_frame.grid(row=0, column=0, sticky="nsew")
+
+        # Left Frame
+        left_frame = tk.Frame(self, bg=globals.ACCENT_COLOR)
+        left_frame.grid(row=0, column=0, sticky="nsew")
+
+        # Configure grid weights for left_frame so content centers vertically and horizontally
+        left_frame.rowconfigure(0, weight=1)
+        left_frame.columnconfigure(0, weight=1)
+
+        # Inner container frame to hold the elements together
+        center_container = tk.Frame(left_frame, bg=globals.ACCENT_COLOR)
+        center_container.grid(row=0, column=0)
+
+        # Title
+        title_label = tk.Label(
+            center_container,
+            text="ASHCRM",
+            font=("Helvetica", 36, "bold"),
+            fg=globals.BACKGROUND_COLOR,
+            bg=globals.ACCENT_COLOR,
+        )
+        title_label.pack()
+
+        # Subtitle
+        subtitle_label = tk.Label(
+            center_container,
+            text="Ateneo Senior Highschool Clinic Record Manager",
+            font=("Helvetica", 16),
+            fg="#E0E0E0",
+            bg=globals.ACCENT_COLOR,
+        )
+        subtitle_label.pack(pady=(0, 16))
+
+        try:
+            self.logo_img = tk.PhotoImage(file="Assets/Logo.png")
+            self.logo_img = self.logo_img.subsample(7)
+            logo_label = tk.Label(
+                center_container, image=self.logo_img, bg=globals.ACCENT_COLOR
+            )
+            logo_label.pack(pady=(0, 15))
+        except:
+            pass
+
+        # Right Frame
+        right_frame = tk.Frame(self, bg=globals.BACKGROUND_COLOR)
+        right_frame.grid(row=0, column=1, sticky="nsew")
+
+        login_bg = globals.BACKGROUND_COLOR
+        login_frame = tk.Frame(right_frame, padx=40, pady=64, bg=login_bg)
+        login_frame.pack(fill="both", padx=64, pady=96, expand=True, anchor="center")
+
+        # Login Widgets
+        header = tk.Label(
+            login_frame,
+            text="Welcome!",
+            font=("Helvetica", 18, "bold"),
+            bg=login_bg,
+            fg=globals.HEADER_COLOR
+        )
+        header.pack()
+
+        # Subtitle
+        subtitle_label = tk.Label(
+            login_frame,
+            text="Sign in to Continue",
+            font=("Helvetica", 9),
+            bg=login_bg,
+            fg=globals.ACCENT_COLOR
+        )
+        subtitle_label.pack()
 
         # Username
-        username_label = tk.Label(login_frame, text="Username")
-        username_label.grid(row=1, column=0, sticky="w", pady=(5, 2))
+        user_label = tk.Label(
+            login_frame,
+            text="Username",
+            font=("Helvetica", 10, "bold"),
+            bg=login_bg,
+            fg=globals.ACCENT_COLOR,
+            anchor="w"
+        )
+        user_label.pack(fill="x", pady=(12, 0))
 
-        self.username_entry = ttk.Entry(login_frame)
-        self.username_entry.grid(row=2, column=0, columnspan=2, sticky="w", pady=(0, 15), ipady=4)
+        self.username_entry = tk.Entry(
+            login_frame,
+            font=("Helvetica", 11),
+            bd=0,
+            relief="solid",
+            highlightthickness=1,
+            highlightbackground=globals.PRIMARY_COLOR,
+            highlightcolor=globals.ACCENT_COLOR
+        )
+        self.username_entry.pack(fill="x", ipady=4)
 
         # Password
-        password_label = tk.Label(login_frame, text="Password")
-        password_label.grid(row=3, column=0, sticky="w", pady=(5, 2))
+        pass_label = tk.Label(
+            login_frame,
+            text="Password",
+            font=("Helvetica", 10, "bold"),
+            bg=login_bg,
+            fg=globals.ACCENT_COLOR,
+            anchor="w",
+        )
+        pass_label.pack(fill="x", pady=(12, 0))
 
-        self.password_entry = ttk.Entry(login_frame, show="*")
-        self.password_entry.grid(row=4, column=0, sticky="w", columnspan=2, pady=(0, 5), ipady=4)
+        self.password_entry = tk.Entry(
+            login_frame,
+            font=("Helvetica", 11),
+            show="•",
+            bd=0,
+            relief="solid",
+            highlightthickness=1,
+            highlightbackground = globals.PRIMARY_COLOR,
+            highlightcolor= globals.ACCENT_COLOR
+        )
+        self.password_entry.pack(fill="x", ipady=4)
 
-        # Show Password Checkbox
+        # Toggle Password
+        checkbox_style = ttk.Style()
+        checkbox_style.configure(
+            "Custom.TCheckbutton",
+            font=("Helvetica", 11),
+            background=login_bg,
+            foreground=globals.ACCENT_COLOR
+        )
+
+        checkbox_style.map(
+            "Custom.TCheckbutton",
+            background=[("active", login_bg)],
+            foreground=[("active", globals.ACCENT_COLOR)]
+        )
+
         self.show_password = tk.BooleanVar()
-        show_password_checkbox = tk.Checkbutton(
+        show_password_checkbox = ttk.Checkbutton(
             login_frame,
             text="Show Password",
             variable=self.show_password,
             command=self.toggle_password_display,
+            style="Custom.TCheckbutton"
         )
-        show_password_checkbox.grid(row=5, column=0, columnspan=2, sticky="w", pady=(0, 15))
+        show_password_checkbox.pack(fill="x", pady=(8, 0))
 
         # Login Button
-        login_button = tk.Button(
+        login_btn = tk.Button(
             login_frame,
-            text="Log In",
-            command=lambda : self.login_user(controller)
+            text="Sign In",
+            font=("Helvetica", 11, "bold"),
+            bd=0,
+            cursor="hand2",
+            command=lambda: self.login_user(controller),
+            fg = globals.BACKGROUND_COLOR,
+            bg = globals.ACCENT_COLOR,
+            highlightthickness=2,
+            activebackground=globals.ACCENT_DARK,
+            activeforeground=globals.BACKGROUND_COLOR
         )
-        login_button.grid(row=6, column=0, columnspan=2, sticky="we", ipady=2)
+        login_btn.pack(fill="x", ipady=8, pady=(32, 0))
 
     def toggle_password_display(self):
         if self.show_password.get():
