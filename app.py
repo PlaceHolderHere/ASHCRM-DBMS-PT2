@@ -102,3 +102,13 @@ class App:
 
         # Set the dimensions and position
         self.root.geometry(f"{globals.window_width}x{globals.window_height}+{x}+{y}")
+
+    def get_screen_center(self, win_width: int, win_height: int) -> tuple:
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        # Calculating the center of the screen relative to the window size
+        x = (screen_width // 2) - (win_width // 2)
+        y = (screen_height // 2) - (win_height // 2)
+
+        return x, y
