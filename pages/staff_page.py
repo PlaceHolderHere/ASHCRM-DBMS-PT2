@@ -370,31 +370,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             pady=5
         )
 
-        # STAFF EMAIL
-        tk.Label(
-            form_frame,
-            text="Email"
-        ).grid(
-            row=1,
-            column=2,
-            sticky="w",
-            padx=(20, 5),
-            pady=5
-        )
-
-        self.email_entry = ttk.Entry(
-            form_frame,
-            width=25,
-            style="ENTRY.TEntry"
-        )
-
-        self.email_entry.grid(
-            row=1,
-            column=3,
-            padx=5,
-            pady=5
-        )
-
         # STAFF CONTACT NUMBER
         tk.Label(
             form_frame,
@@ -420,10 +395,34 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             pady=5
         )
 
+        # STAFF EMAIL
+        tk.Label(
+            form_frame,
+            text="Email"
+        ).grid(
+            row=1,
+            column=2,
+            sticky="w",
+            padx=(20, 5),
+            pady=5
+        )
+
+        self.email_entry = ttk.Entry(
+            form_frame,
+            width=25,
+            style="ENTRY.TEntry"
+        )
+
+        self.email_entry.grid(
+            row=1,
+            column=3,
+            padx=5,
+            pady=5
+        )
+
         # BUTTONS
         button_frame = tk.Frame(container)
         button_frame.pack(pady=10)
-
 
         # UPDATE RECORD
         ttk.Button(
