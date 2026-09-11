@@ -271,6 +271,7 @@ class StaffPage(tk.Frame):
 class CreateStaffProfilePopUp(tk.Toplevel):
     def __init__(self, controller):
         super().__init__(controller.root)
+        self.controller = controller
 
         # Window Configuration
         self.title("Create a Staff Profile")
@@ -469,6 +470,30 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
     def add_staff_record(self):
         data = self.get_form_data()
+        query = """
+                INSERT INTO staff (name, position, email, contact_number)
+                VALUES (%(NAME)s, %(POSITION)s, %(EMAIL)s, %(CONTACT)s);
+                """
+
+        try:
+            self.controller.cursor.execute(
+                query,
+                data
+            )
+
+            self.controller.connection.commit()
+            messagebox.showinfo(
+                "Success",
+            "Staff record has been added successfully."
+            )
+            self.close_window()
+
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror(
+                "Database Error",
+                f"Could not add record.\n\n{e}"
+                )
 
     def clear_fields(self):
         self.name_entry.delete(0, tk.END)
@@ -483,9 +508,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             "CONTACT": self.contact_number_entry.get(),
             "EMAIL": self.email_entry.get()
         }
-
-    def submit_data(self):
-        ...
 
     def on_close_attempt(self):
         if messagebox.askokcancel("Do you wish to close this window?",
