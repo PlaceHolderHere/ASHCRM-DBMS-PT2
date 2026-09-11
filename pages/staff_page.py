@@ -9,6 +9,7 @@ class StaffPage(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.cursor = controller.cursor
         self.controller = controller
+        self.keyword = ""
 
         # SEARCH
         search_frame = tk.Frame(self)
@@ -186,9 +187,9 @@ class StaffPage(tk.Frame):
 
     # SEARCH
     def search_records(self):
-        keyword = self.search_entry.get().strip()
+        self.keyword = self.search_entry.get().strip()
 
-        if not keyword:
+        if not self.keyword:
             self.load_records()
             return
 
@@ -209,7 +210,7 @@ class StaffPage(tk.Frame):
                 ORDER BY staff_id
             """
 
-            search_value = f"%{keyword}%"
+            search_value = f"%{self.keyword}%"
 
             self.cursor.execute(
                 query,
@@ -227,7 +228,7 @@ class StaffPage(tk.Frame):
             # Checking if any Staff Members matching keyword were found
             if len(rows) == 0:
                 messagebox.showinfo("No Staff Members Found",
-                                    f"Could not find any staff members who's attributes containing {keyword}")
+                                f"Could not find any staff members who's attributes containing {self.keyword}")
                 return
 
             self.display_records(rows)
@@ -265,13 +266,14 @@ class StaffPage(tk.Frame):
             )
 
     def open_create_staff_popup(self):
-        create_staff_popup = CreateStaffProfilePopUp(self.controller)
+        create_staff_popup = CreateStaffProfilePopUp(self.controller, self)
         self.wait_window(create_staff_popup)
 
 class CreateStaffProfilePopUp(tk.Toplevel):
-    def __init__(self, controller):
+    def __init__(self, controller, parent):
         super().__init__(controller.root)
         self.controller = controller
+        self.parent = parent
 
         # Window Configuration
         self.title("Create a Staff Profile")
@@ -486,6 +488,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
                 "Success",
             "Staff record has been added successfully."
             )
+            self.parent.search_records()
             self.close_window()
 
         except mysql.connector.Error as e:
