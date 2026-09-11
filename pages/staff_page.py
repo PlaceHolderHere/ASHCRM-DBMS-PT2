@@ -10,166 +10,7 @@ class StaffPage(tk.Frame):
         self.cursor = controller.cursor
         self.controller = controller
         self.keyword = ""
-
-        # SEARCH
-        search_frame = tk.Frame(self)
-        search_frame.pack(
-            fill="x",
-            padx=20,
-            pady=(4, 8),
-            ipady=16,
-            ipadx=32
-        )
-
-        # Home
-        home_button = ttk.Button(
-            search_frame,
-            text="← Home",
-            command=lambda : controller.render_page("HOME"),
-            style = "BTN.TButton",
-            cursor = "hand2")
-        home_button.pack(side="left")
-
-        tk.Label(
-            search_frame,
-            text="Search:"
-        ).pack(
-            side="left",
-            padx=(0, 8)
-        )
-
-        self.search_entry = ttk.Entry(
-            search_frame,
-            width=40,
-            style="ENTRY.TEntry"
-        )
-
-        self.search_entry.pack(
-            side="left"
-        )
-
-        ttk.Button(
-            search_frame,
-            text="Search",
-            width=12,
-            command=self.search_records,
-            style="BTN.TButton",
-            cursor="hand2"
-        ).pack(
-            side="left",
-            padx=4
-        )
-
-        # Show All Button
-        ttk.Button(
-            search_frame,
-            text="Show All",
-            width=12,
-            command=self.load_records,
-            style="BTN.TButton",
-            cursor="hand2"
-        ).pack(
-            side="left"
-        )
-
-        ttk.Button(
-            search_frame,
-            text="Create Profile",
-            command= self.open_create_staff_popup,
-            style="BTN.TButton",
-            cursor="hand2"
-        ).pack(
-            side="left",
-            padx = (8, 0)
-        )
-
-        # Search Results Table
-        table_frame = tk.Frame(self)
-        table_frame.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=(4, 8),
-            ipady=16,
-            ipadx=32
-        )
-
-        columns = (
-            "staff_id",
-            "name",
-            "position",
-            "email",
-            "contact_number"
-        )
-
-        self.tree = ttk.Treeview(
-            table_frame,
-            columns=columns,
-            show="headings"
-        )
-
-        # COLUMN HEADINGS
-        headings = {
-            "staff_id": "Staff ID",
-            "name": "Name",
-            "position": "Position",
-            "email": "Email",
-            "contact_number": "Contact Number"
-        }
-
-        # COLUMN WIDTHS
-        widths = {
-            "staff_id": 100,
-            "name": 180,
-            "position": 120,
-            "email": 120,
-            "contact_number": 120
-        }
-
-        for column in columns:
-            self.tree.heading(
-                column,
-                text=headings[column]
-            )
-            self.tree.column(
-                column,
-                width=widths[column],
-                anchor="center"
-            )
-
-        # SCROLLBARS
-        vertical_scrollbar = ttk.Scrollbar(
-            table_frame,
-            orient="vertical",
-            command=self.tree.yview
-        )
-
-        horizontal_scrollbar = ttk.Scrollbar(
-            table_frame,
-            orient="horizontal",
-            command=self.tree.xview
-        )
-
-        self.tree.configure(
-            yscrollcommand=vertical_scrollbar.set,
-            xscrollcommand=horizontal_scrollbar.set
-        )
-
-        horizontal_scrollbar.pack(
-            side="bottom",
-            fill="x"
-        )
-
-        vertical_scrollbar.pack(
-            side="right",
-            fill="y"
-        )
-
-        self.tree.pack(
-            side="top",
-            fill="both",
-            expand=True
-        )
+        self._create_widgets()
 
     # DISPLAY RECORDS
     def display_records(self, rows):
@@ -268,6 +109,167 @@ class StaffPage(tk.Frame):
     def open_create_staff_popup(self):
         create_staff_popup = CreateStaffProfilePopUp(self.controller, self)
         self.wait_window(create_staff_popup)
+
+    def _create_widgets(self):
+        # SEARCH
+        search_frame = tk.Frame(self)
+        search_frame.pack(
+            fill="x",
+            padx=20,
+            pady=(4, 8),
+            ipady=16,
+            ipadx=32
+        )
+
+        # Home
+        home_button = ttk.Button(
+            search_frame,
+            text="← Home",
+            command=lambda: self.controller.render_page("HOME"),
+            style="BTN.TButton",
+            cursor="hand2")
+        home_button.pack(side="left")
+
+        tk.Label(
+            search_frame,
+            text="Search:"
+        ).pack(
+            side="left",
+            padx=(0, 8)
+        )
+
+        self.search_entry = ttk.Entry(
+            search_frame,
+            width=40,
+            style="ENTRY.TEntry"
+        )
+
+        self.search_entry.pack(
+            side="left"
+        )
+
+        ttk.Button(
+            search_frame,
+            text="Search",
+            width=12,
+            command=self.search_records,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).pack(
+            side="left",
+            padx=4
+        )
+
+        # Show All Button
+        ttk.Button(
+            search_frame,
+            text="Show All",
+            width=12,
+            command=self.load_records,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).pack(
+            side="left"
+        )
+
+        ttk.Button(
+            search_frame,
+            text="Create Profile",
+            command=self.open_create_staff_popup,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).pack(
+            side="left",
+            padx=(8, 0)
+        )
+
+        # Search Results Table
+        table_frame = tk.Frame(self)
+        table_frame.pack(
+            fill="both",
+            expand=True,
+            padx=20,
+            pady=(4, 8),
+            ipady=16,
+            ipadx=32
+        )
+
+        columns = (
+            "staff_id",
+            "name",
+            "position",
+            "email",
+            "contact_number"
+        )
+
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=columns,
+            show="headings"
+        )
+
+        # COLUMN HEADINGS
+        headings = {
+            "staff_id": "Staff ID",
+            "name": "Name",
+            "position": "Position",
+            "email": "Email",
+            "contact_number": "Contact Number"
+        }
+
+        # COLUMN WIDTHS
+        widths = {
+            "staff_id": 100,
+            "name": 180,
+            "position": 120,
+            "email": 120,
+            "contact_number": 120
+        }
+
+        for column in columns:
+            self.tree.heading(
+                column,
+                text=headings[column]
+            )
+            self.tree.column(
+                column,
+                width=widths[column],
+                anchor="center"
+            )
+
+        # SCROLLBARS
+        vertical_scrollbar = ttk.Scrollbar(
+            table_frame,
+            orient="vertical",
+            command=self.tree.yview
+        )
+
+        horizontal_scrollbar = ttk.Scrollbar(
+            table_frame,
+            orient="horizontal",
+            command=self.tree.xview
+        )
+
+        self.tree.configure(
+            yscrollcommand=vertical_scrollbar.set,
+            xscrollcommand=horizontal_scrollbar.set
+        )
+
+        horizontal_scrollbar.pack(
+            side="bottom",
+            fill="x"
+        )
+
+        vertical_scrollbar.pack(
+            side="right",
+            fill="y"
+        )
+
+        self.tree.pack(
+            side="top",
+            fill="both",
+            expand=True
+        )
 
 class CreateStaffProfilePopUp(tk.Toplevel):
     def __init__(self, controller, parent):
