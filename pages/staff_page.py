@@ -469,13 +469,18 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
 
     def add_staff_record(self):
-        ...
+        data = self.get_form_data()
 
     def clear_fields(self):
         ...
 
-    def get_form_data(self):
-        ...
+    def get_form_data(self) -> dict:
+        return {
+            "NAME": self.name_entry.get(),
+            "POSITION": self.position_entry.get(),
+            "CONTACT": self.contact_number_entry.get(),
+            "EMAIL": self.email_entry.get()
+        }
 
     def submit_data(self):
         ...
