@@ -471,7 +471,10 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         data = self.get_form_data()
 
     def clear_fields(self):
-        ...
+        self.name_entry.delete(0, tk.END)
+        self.position_entry.delete(0, tk.END)
+        self.contact_number_entry.delete(0, tk.END)
+        self.email_entry.delete(0, tk.END)
 
     def get_form_data(self) -> dict:
         return {
