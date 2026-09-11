@@ -321,40 +321,15 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             pady=4
         )
 
-        # STAFF ID
-        tk.Label(
-            form_frame,
-            text="Staff ID:"
-        ).grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=4,
-            pady=4
-        )
-
-        self.staff_id_entry = ttk.Entry(
-            form_frame,
-            width=24,
-            style="ENTRY.TEntry"
-        )
-
-        self.staff_id_entry.grid(
-            row=0,
-            column=1,
-            padx=4,
-            pady=4
-        )
-
         # STAFF NAME
         tk.Label(
             form_frame,
             text="Staff Name"
         ).grid(
             row=0,
-            column=2,
+            column=0,
             sticky="w",
-            padx=(20, 5),
+            padx=5,
             pady=5
         )
 
@@ -363,10 +338,9 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             width=25,
             style="ENTRY.TEntry"
         )
-
         self.name_entry.grid(
             row=0,
-            column=3,
+            column=1,
             padx=5,
             pady=5
         )
@@ -376,8 +350,8 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             form_frame,
             text="Position"
         ).grid(
-            row=1,
-            column=0,
+            row=0,
+            column=2,
             sticky="w",
             padx=5,
             pady=5
@@ -390,8 +364,8 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         )
 
         self.position_entry.grid(
-            row=1,
-            column=1,
+            row=0,
+            column=3,
             padx=5,
             pady=5
         )
@@ -426,7 +400,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             form_frame,
             text="Contact Number"
         ).grid(
-            row=2,
+            row=1,
             column=0,
             sticky="w",
             padx=5,
@@ -440,7 +414,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         )
 
         self.contact_number_entry.grid(
-            row=2,
+            row=1,
             column=1,
             padx=5,
             pady=5
