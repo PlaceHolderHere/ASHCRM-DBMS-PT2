@@ -461,8 +461,11 @@ class StaffDetailWindow(tk.Toplevel):
         return output
 
     def save_update(self):
-        form_data = self.get_entry_data()
+        if not self.is_data_changed():
+            messagebox.showinfo("No Changes to Be Saved", "No changes have been made to be saved to the database.")
+            return
 
+        form_data = self.get_entry_data()
         if form_data.get("staff_id") is None:
             messagebox.showerror("ERROR! Invalid Staff ID", "Error! Invalid Staff ID.")
             return
