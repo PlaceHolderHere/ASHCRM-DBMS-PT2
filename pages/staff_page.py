@@ -12,6 +12,20 @@ class StaffPage(tk.Frame):
         self.keyword = ""
         self._create_widgets()
 
+        # Run a function when a user double clicks on a row
+        self.tree.bind("<Double-1>", self.open_details_popup)
+
+    def open_details_popup(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        values = self.tree.item(selected[0], "values")
+        values_dict = dict(zip(self.tree["columns"], values))
+
+        # Will open instantly the window from the separate file
+        StaffDetailWindow(self.controller, self, values_dict)
+
     def delete_selected(self):
         rows = self.tree.selection()
         if not rows:
@@ -305,6 +319,104 @@ class StaffPage(tk.Frame):
             side="top",
             fill="both",
             expand=True
+        )
+
+class StaffDetailWindow(tk.Toplevel):
+    def __init__(self, controller, parent, staff_data):
+        super().__init__(controller.root)
+        self.controller = controller
+        self.parent = parent
+        self.staff_data = staff_data
+
+        # Window Configuration
+        self.title("Create a Staff Profile")
+        self.geometry(f"{globals.window_width // 2}x{globals.window_height // 2}")
+        self.resizable(False, False)
+
+        # Center relative to parent
+        x, y = controller.get_screen_center(globals.window_width // 2, globals.window_height // 2)
+        self.geometry(
+            f"+{x}+{y}"
+        )
+
+        self.transient(controller.root)  # Keeps window on top of parent
+        self.grab_set()  # Routes all user events strictly to this window
+
+        # Create UI Widgets
+        self._create_widgets()
+
+    def _create_widgets(self):
+        container = tk.Frame(self, background=globals.BACKGROUND_COLOR)
+        container.pack(expand=True, fill="both")
+
+        # TITLE
+        tk.Label(
+            container,
+            text="STAFF",
+            font=("Arial", 22, "bold"),
+            foreground=globals.ACCENT_COLOR,
+            background=globals.BACKGROUND_COLOR
+        ).pack(
+            pady=(15, 5)
+        )
+
+        # DETAILS FRAME
+        info_frame = tk.Frame(
+            container,
+            padx=20,
+            pady=10,
+            bg=globals.BACKGROUND_COLOR
+        )
+
+        info_frame.pack(
+            fill="both",
+            expand=True)
+
+        # It loops through the data/labels while generating a counter to tell the program
+        # which row to place each piece of text on
+        self.entry_widgets = {}
+        num_of_cols = 2
+        for index, (label_text, value_text) in enumerate(self.staff_data.items()):
+            column = index % num_of_cols
+            row = index // num_of_cols
+
+            # THE LABELS/COLUMN OF INFO
+            tk.Label(
+                info_frame,
+                text=label_text,
+                font=("Helvetica", 11, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).grid(
+                row=row,
+                column=column * num_of_cols,
+                sticky="w",
+                pady=8
+            )
+
+            # THE ACTUAL DATA
+            self.entry_widgets[label_text] = ttk.Entry(
+                info_frame,
+                style="ENTRY.TEntry"
+            )
+            self.entry_widgets[label_text].insert(0, value_text)
+            self.entry_widgets[label_text].grid(
+                row=row,
+                column=(column * num_of_cols) + 1,
+                sticky="w",
+                pady=8,
+                padx=(4, 16)
+                )
+
+        # CLOSE BUTTON
+        ttk.Button(
+            container,
+            text="Close",
+            width=15,
+            style="BTN.TButton",
+            command=self.destroy
+        ).pack(
+            pady=16
         )
 
 class CreateStaffProfilePopUp(tk.Toplevel):
