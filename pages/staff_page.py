@@ -12,6 +12,31 @@ class StaffPage(tk.Frame):
         self.keyword = ""
         self._create_widgets()
 
+    def delete_selected(self):
+        rows = self.tree.selection()
+        if not rows:
+            return
+
+        if not messagebox.askokcancel("Delete Records",
+                                      "Are you sure you want to delete all of the currently selected records?"):
+            return
+
+        selected_ids = []
+        for row_id in rows:
+            row = self.tree.item(row_id, "values")
+            selected_ids.append((row[0],))
+
+        query = "DELETE FROM staff WHERE staff_id = %s;"
+        try:
+            self.cursor.executemany(query, selected_ids)
+            self.controller.connection.commit()
+            self.search_records()
+            messagebox.showinfo("Deleted Records", "Successfully Deleted all Selected Records")
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror("ERROR! Could not Delete",
+                                 f"Error! Failed to delete selected records. \n\nError Message:{e}")
+
     # DISPLAY RECORDS
     def display_records(self, rows):
         # CLEAR EXISTING ROWS
@@ -176,6 +201,17 @@ class StaffPage(tk.Frame):
             search_frame,
             text="Create Profile",
             command=self.open_create_staff_popup,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).pack(
+            side="left",
+            padx=(8, 0)
+        )
+
+        ttk.Button(
+            search_frame,
+            text="Delete Selected",
+            command=self.delete_selected,
             style="BTN.TButton",
             cursor="hand2"
         ).pack(
