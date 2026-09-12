@@ -448,6 +448,13 @@ class StaffDetailWindow(tk.Toplevel):
             padx=8
         )
 
+    def is_data_changed(self) -> bool:
+        entry_data = self.get_entry_data()
+        for key, value in self.staff_data.items():
+            if value != entry_data.get(key):
+                return True
+        return False
+
     def get_entry_data(self) -> dict:
         output = {entry[0]: entry[1].get() for entry in self.entry_widgets.items()}
         output["staff_id"] = self.staff_data.get("staff_id")
