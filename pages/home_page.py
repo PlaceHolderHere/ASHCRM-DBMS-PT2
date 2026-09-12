@@ -36,3 +36,11 @@ class HomePage(tk.Frame):
             cursor="hand2",
             command=lambda: controller.render_page("STAFF"))
         staff_button.pack(pady=4)
+
+        service_form_btn = ttk.Button(
+            self,
+            text="Service Forms",
+            style="BTN.TButton",
+            cursor="hand2",
+            command=lambda: controller.render_page("SERVICE_FORMS"))
+        service_form_btn.pack(pady=4)

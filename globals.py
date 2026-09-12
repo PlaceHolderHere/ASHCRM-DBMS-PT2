@@ -5,6 +5,7 @@ from pages.login_page import LogInPage
 from pages.students_page import StudentsPage
 from qr_scanner import QrScanner
 from pages.staff_page import StaffPage
+from pages.service_forms_page import ServiceFormPage
 
 # Imports
 from tkinter import ttk
@@ -25,7 +26,8 @@ pages = {
     "LOGIN": LogInPage,
     "QR": QrScanner,
     "STUDENTS": StudentsPage,
-    "STAFF": StaffPage
+    "STAFF": StaffPage,
+    "SERVICE_FORMS": ServiceFormPage
 }
 
 def init_ttk_styles():
