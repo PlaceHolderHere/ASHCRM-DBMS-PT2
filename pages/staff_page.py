@@ -342,6 +342,9 @@ class StaffDetailWindow(tk.Toplevel):
         self.transient(controller.root)  # Keeps window on top of parent
         self.grab_set()  # Routes all user events strictly to this window
 
+        # Run a Function When the User Closes the Window
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
         # Create UI Widgets
         self._create_widgets()
 
@@ -438,15 +441,24 @@ class StaffDetailWindow(tk.Toplevel):
         # CLOSE BUTTON
         ttk.Button(
             container,
-            text="Close",
+            text="Cancel",
             width=15,
             style="BTN.TButton",
-            command=self.destroy
+            command=self.on_close
         ).pack(
             pady=16,
             side="right",
             padx=8
         )
+
+    def on_close(self):
+        if not self.is_data_changed():
+            self.destroy()
+            return
+
+        if messagebox.askokcancel("Unsaved Changes",
+                                  "You have unsaved changes, are you sure you want to close this window?"):
+            self.destroy()
 
     def is_data_changed(self) -> bool:
         entry_data = self.get_entry_data()
