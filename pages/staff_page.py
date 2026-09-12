@@ -395,18 +395,32 @@ class StaffDetailWindow(tk.Toplevel):
             )
 
             # THE ACTUAL DATA
-            self.entry_widgets[label_text] = ttk.Entry(
-                info_frame,
-                style="ENTRY.TEntry"
-            )
-            self.entry_widgets[label_text].insert(0, value_text)
-            self.entry_widgets[label_text].grid(
-                row=row,
-                column=(column * num_of_cols) + 1,
-                sticky="w",
-                pady=8,
-                padx=(4, 16)
+            if label_text == "staff_id":
+                tk.Label(
+                    info_frame,
+                    text=value_text,
+                    font=("Helvetica", 11, "bold"),
+                    background=globals.BACKGROUND_COLOR
+                ).grid(
+                    row=row,
+                    column=(column * num_of_cols) + 1,
+                    sticky="w",
+                    pady=8,
+                    padx=(4, 16)
                 )
+            else:
+                self.entry_widgets[label_text] = ttk.Entry(
+                    info_frame,
+                    style="ENTRY.TEntry"
+                )
+                self.entry_widgets[label_text].insert(0, value_text)
+                self.entry_widgets[label_text].grid(
+                    row=row,
+                    column=(column * num_of_cols) + 1,
+                    sticky="w",
+                    pady=8,
+                    padx=(4, 16)
+                    )
 
         # SAVE BUTTON
         ttk.Button(
@@ -435,7 +449,9 @@ class StaffDetailWindow(tk.Toplevel):
         )
 
     def get_entry_data(self) -> dict:
-        return {entry[0]: entry[1].get() for entry in self.entry_widgets.items()}
+        output = {entry[0]: entry[1].get() for entry in self.entry_widgets.items()}
+        output["staff_id"] = self.staff_data.get("staff_id")
+        return output
 
     def save_update(self):
         form_data = self.get_entry_data()
