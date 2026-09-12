@@ -383,7 +383,7 @@ class StaffDetailWindow(tk.Toplevel):
             # THE LABELS/COLUMN OF INFO
             tk.Label(
                 info_frame,
-                text=label_text,
+                text=label_text.title(),
                 font=("Helvetica", 11, "bold"),
                 foreground=globals.ACCENT_COLOR,
                 background=globals.BACKGROUND_COLOR
@@ -408,6 +408,19 @@ class StaffDetailWindow(tk.Toplevel):
                 padx=(4, 16)
                 )
 
+        # SAVE BUTTON
+        ttk.Button(
+            container,
+            text="Save",
+            width=15,
+            style="BTN_SOLID.TButton",
+            command=self.save_update
+        ).pack(
+            pady=16,
+            side="right",
+            padx=(8, 32)
+        )
+
         # CLOSE BUTTON
         ttk.Button(
             container,
@@ -416,8 +429,43 @@ class StaffDetailWindow(tk.Toplevel):
             style="BTN.TButton",
             command=self.destroy
         ).pack(
-            pady=16
+            pady=16,
+            side="right",
+            padx=8
         )
+
+    def get_entry_data(self) -> dict:
+        return {entry[0]: entry[1].get() for entry in self.entry_widgets.items()}
+
+    def save_update(self):
+        form_data = self.get_entry_data()
+
+        if form_data.get("staff_id") is None:
+            messagebox.showerror("ERROR! Invalid Staff ID", "Error! Invalid Staff ID.")
+            return
+
+        query = """
+            UPDATE staff
+            SET
+                name = %(name)s,
+                position = %(position)s,
+                email = %(email)s,
+                contact_number = %(contact_number)s
+            WHERE 
+                staff_id = %(staff_id)s
+        """
+        try:
+            self.controller.cursor.execute(query, form_data)
+            self.controller.connection.commit()
+            messagebox.showinfo("Updated Successfully!",
+                                f"Updated the Information of {form_data.get("name")} successfully!")
+            self.parent.search_records()
+            self.destroy()
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror("ERROR! Could not Update Record",
+                f"An erorr occurred while trying to update the profile of {form_data.get("name")}"
+                f"\n\nError Message: {e}")
 
 class CreateStaffProfilePopUp(tk.Toplevel):
     def __init__(self, controller, parent):
