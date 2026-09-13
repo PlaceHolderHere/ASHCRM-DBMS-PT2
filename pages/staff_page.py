@@ -6,7 +6,8 @@ import globals
 
 class StaffPage(tk.Frame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        self.background_color = globals.BACKGROUND_COLOR
+        tk.Frame.__init__(self, parent, bg=self.background_color)
         self.cursor = controller.cursor
         self.controller = controller
         self.keyword = ""
@@ -57,13 +58,20 @@ class StaffPage(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        # Insert Rows into treeview
-        for row in rows:
-            self.tree.insert(
-                "",
-                "end",
-                values=row
-            )
+        for i in range(100):
+            # Insert Rows into treeview
+            for row_idx, row in enumerate(rows):
+                if row_idx % 2 == 0:
+                    tag="even"
+                else:
+                    tag="odd"
+
+                self.tree.insert(
+                    "",
+                    "end",
+                    values=row,
+                    tags=(tag,)
+                )
 
     # SEARCH
     def search_records(self):
@@ -151,30 +159,55 @@ class StaffPage(tk.Frame):
 
     def _create_widgets(self):
         # SEARCH
-        search_frame = tk.Frame(self)
+        search_frame = tk.Frame(self, bg=self.background_color)
         search_frame.pack(
             fill="x",
-            padx=20,
-            pady=(4, 8),
-            ipady=16,
-            ipadx=32
+            padx=48,
+            pady=(24, 16)
         )
+        search_frame.columnconfigure(1, weight=1)
+        search_frame.columnconfigure(4, weight=1)
 
         # Home
         home_button = ttk.Button(
             search_frame,
-            text="← Home",
+            text="← Back",
             command=lambda: self.controller.render_page("HOME"),
             style="BTN.TButton",
             cursor="hand2")
-        home_button.pack(side="left")
+        home_button.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            pady=(0, 16),
+            padx=4
+        )
 
-        tk.Label(
+        create_btn = ttk.Button(
             search_frame,
-            text="Search:"
-        ).pack(
-            side="left",
-            padx=(0, 8)
+            text="Create Profile",
+            command=self.open_create_staff_popup,
+            style="BTN.TButton",
+            cursor="hand2"
+        )
+        create_btn.grid(
+            row=0,
+            column=4,
+            sticky="e"
+        )
+
+        search_label = tk.Label(
+            search_frame,
+            text="Search:",
+            font=("Helvetica", 14),
+            foreground=globals.ACCENT_COLOR,
+            background=self.background_color
+        )
+        search_label.grid(
+            row=1,
+            column=0,
+            sticky="e",
+            padx=(0, 4)
         )
 
         self.search_entry = ttk.Entry(
@@ -182,55 +215,52 @@ class StaffPage(tk.Frame):
             width=40,
             style="ENTRY.TEntry"
         )
-
-        self.search_entry.pack(
-            side="left"
+        self.search_entry.grid(
+            row=1,
+            column=1,
+            padx = (0, 12),
+            sticky="ew"
         )
 
-        ttk.Button(
+        search_btn = ttk.Button(
             search_frame,
             text="Search",
             width=12,
             command=self.search_records,
             style="BTN.TButton",
             cursor="hand2"
-        ).pack(
-            side="left",
-            padx=4
+        )
+        search_btn.grid(
+            row=1,
+            column=2,
+            padx=(0, 6)
         )
 
         # Show All Button
-        ttk.Button(
+        show_all_btn = ttk.Button(
             search_frame,
             text="Show All",
             width=12,
             command=self.load_records,
             style="BTN.TButton",
             cursor="hand2"
-        ).pack(
-            side="left"
+        )
+        show_all_btn.grid(
+            row=1,
+            column=3
         )
 
-        ttk.Button(
-            search_frame,
-            text="Create Profile",
-            command=self.open_create_staff_popup,
-            style="BTN.TButton",
-            cursor="hand2"
-        ).pack(
-            side="left",
-            padx=(8, 0)
-        )
-
-        ttk.Button(
+        delete_btn = ttk.Button(
             search_frame,
             text="Delete Selected",
             command=self.delete_selected,
             style="BTN.TButton",
             cursor="hand2"
-        ).pack(
-            side="left",
-            padx=(8, 0)
+        )
+        delete_btn.grid(
+            row=1,
+            column=4,
+            sticky="e"
         )
 
         # Search Results Table
@@ -238,10 +268,8 @@ class StaffPage(tk.Frame):
         table_frame.pack(
             fill="both",
             expand=True,
-            padx=20,
-            pady=(4, 8),
-            ipady=16,
-            ipadx=32
+            padx=48,
+            pady=(24, 32)
         )
 
         columns = (
@@ -255,8 +283,11 @@ class StaffPage(tk.Frame):
         self.tree = ttk.Treeview(
             table_frame,
             columns=columns,
-            show="headings"
+            show="headings",
+            style="Treeview"
         )
+        self.tree.tag_configure("odd", background=globals.PRIMARY_LIGHT)
+        self.tree.tag_configure("even", background=globals.BACKGROUND_COLOR)
 
         # COLUMN HEADINGS
         headings = {
@@ -291,13 +322,15 @@ class StaffPage(tk.Frame):
         vertical_scrollbar = ttk.Scrollbar(
             table_frame,
             orient="vertical",
-            command=self.tree.yview
+            command=self.tree.yview,
+            style="SCROLL.TScrollbar"
         )
 
         horizontal_scrollbar = ttk.Scrollbar(
             table_frame,
             orient="horizontal",
-            command=self.tree.xview
+            command=self.tree.xview,
+            style="SCROLL.TScrollbar"
         )
 
         self.tree.configure(

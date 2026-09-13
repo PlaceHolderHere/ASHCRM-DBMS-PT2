@@ -30,9 +30,69 @@ pages = {
 }
 
 def init_ttk_styles():
-    # ENTRIES
     styles = ttk.Style()
-    styles.theme_use("clam") # For custom border and background doverrides
+    styles.theme_use("clam")  # For custom border and background doverrides
+
+    # SCROLL BARS
+    styles.configure(
+        "SCROLL.TScrollbar",
+        troughcolor=BACKGROUND_COLOR,
+        background=ACCENT_COLOR,
+        bordercolor=BACKGROUND_COLOR,
+        arrowcolor=BACKGROUND_COLOR,
+        relief="flat",
+        borderwidth=0,
+        arrowsize=0,
+    )
+
+    styles.layout(
+        "SCROLL.TScrollbar",
+        [
+            (
+                "Scrollbar.trough",
+                {
+                    "sticky": "ns",
+                    "children": [
+                        ("Scrollbar.thumb", {"expand": "1", "sticky": "nswe"})
+                    ],
+                },
+            )
+        ],
+    )
+
+    styles.map(
+        "SCROLL.TScrollbar",
+        background=[("active", ACCENT_DARK), ("pressed", PRIMARY_COLOR)],
+    )
+
+    # TABLES
+    styles.configure(
+        "Treeview",
+        background=BACKGROUND_COLOR,
+        foreground=ACCENT_COLOR,
+        borderwidth=2,
+        bordercolor=ACCENT_COLOR,
+        rowheight=30,
+        font=("Helvetica", 11)
+    )
+    styles.configure(
+        "Treeview.Heading",
+        background=ACCENT_COLOR,
+        foreground=BACKGROUND_COLOR,
+        borderwidth=2,
+        bordercolor=ACCENT_COLOR,
+        rowheight=30,
+        font=("Helvetica", 11)
+    )
+    styles.map(
+        "Treeview.Heading",
+        background=[
+            ("hover", ACCENT_DARK),
+            ("active", ACCENT_DARK)
+        ]
+    )
+
+    # ENTRIES
     styles.configure(
         "ENTRY.TEntry",
         font=("Helvetica", 11),
