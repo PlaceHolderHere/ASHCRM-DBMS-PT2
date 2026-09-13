@@ -12,6 +12,7 @@ from tkinter import ttk
 
 # List of all global variables and constants that can be accessed by all python files
 PRIMARY_COLOR = "#aecfe4"
+PRIMARY_LIGHT = "#d0e3ef"
 ACCENT_COLOR = "#46748e"
 ACCENT_DARK = "#335e76"
 BACKGROUND_COLOR = "#ffffff"
@@ -31,10 +32,10 @@ pages = {
 }
 
 def init_ttk_styles():
-    # Entries
-    entry_style = ttk.Style()
-    entry_style.theme_use("clam") # For custom border and background doverrides
-    entry_style.configure(
+    # ENTRIES
+    styles = ttk.Style()
+    styles.theme_use("clam") # For custom border and background doverrides
+    styles.configure(
         "ENTRY.TEntry",
         font=("Helvetica", 11),
         bordercolor=PRIMARY_COLOR,
@@ -42,15 +43,15 @@ def init_ttk_styles():
         padding=4,
     )
 
-    entry_style.map(
-        "Custom.TEntry",
+    styles.map(
+        "ENTRY.TEntry",
         bordercolor=[
             ("focus", ACCENT_COLOR)
         ]
     )
 
-    button_style = ttk.Style()
-    button_style.configure(
+    # DEFAULT BUTTON
+    styles.configure(
         "BTN.TButton",
         foreground=ACCENT_COLOR,
         background=BACKGROUND_COLOR,
@@ -63,7 +64,7 @@ def init_ttk_styles():
         borderwidth=2,  # Border thickness
         relief="solid",
     )
-    button_style.map(
+    styles.map(
         "BTN.TButton",
         background=[
             ("active", ACCENT_DARK),  # Color when clicked
@@ -75,8 +76,9 @@ def init_ttk_styles():
         ],
     )
 
-    button_solid_style = ttk.Style()
-    button_solid_style.configure(
+    # SOLID BUTTON
+    styles = ttk.Style()
+    styles.configure(
         "BTN_SOLID.TButton",
         foreground=BACKGROUND_COLOR,
         background=ACCENT_COLOR,
@@ -86,10 +88,28 @@ def init_ttk_styles():
         borderwidth=1,
         relief="flat",
     )
-    button_solid_style.map(
+    styles.map(
         "BTN_SOLID.TButton",
         background=[
             ("active", ACCENT_DARK),  # Color when clicked
             ("hover", ACCENT_DARK)  # Color on mouse hover
+        ]
+    )
+
+    # SIDEBAR BUTTONS
+    styles.configure(
+        "SIDEBAR_BTN.TButton",
+        font=("Helvetica", 15, "bold"),
+        foreground=ACCENT_DARK,
+        background=PRIMARY_LIGHT,
+        anchor="w",
+        padding=(15, 10),
+        relief="flat"
+    )
+    styles.map(
+        "SIDEBAR_BTN.TButton",
+        background=[
+            ("active", PRIMARY_COLOR),  # Color when clicked
+            ("hover", PRIMARY_COLOR)  # Color on mouse hover
         ]
     )
