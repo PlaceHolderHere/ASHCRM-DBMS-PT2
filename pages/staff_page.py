@@ -58,20 +58,19 @@ class StaffPage(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        for i in range(100):
-            # Insert Rows into treeview
-            for row_idx, row in enumerate(rows):
-                if row_idx % 2 == 0:
-                    tag="even"
-                else:
-                    tag="odd"
+        # Insert Rows into treeview
+        for row_idx, row in enumerate(rows):
+            if row_idx % 2 == 0:
+                tag="even"
+            else:
+                tag="odd"
 
-                self.tree.insert(
-                    "",
-                    "end",
-                    values=row,
-                    tags=(tag,)
-                )
+            self.tree.insert(
+                "",
+                "end",
+                values=row,
+                tags=(tag,)
+            )
 
     # SEARCH
     def search_records(self):
