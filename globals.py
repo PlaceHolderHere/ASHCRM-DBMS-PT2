@@ -8,6 +8,7 @@ from pages.service_forms_page import ServiceFormPage
 
 # Imports
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 # List of all global variables and constants that can be accessed by all python files
 PRIMARY_COLOR = "#aecfe4"
@@ -28,6 +29,26 @@ pages = {
     "STAFF": StaffPage,
     "SERVICE_FORMS": ServiceFormPage
 }
+
+def create_styled_button(parent, photo_path, text, command, size=(16, 16)):
+    try:
+        img = Image.open(photo_path)
+        resized_icon = img.resize(size, Image.Resampling.LANCZOS)
+        icon = ImageTk.PhotoImage(resized_icon)
+    except Exception as e:
+        print(f"{e}")
+
+    button = ttk.Button(
+        parent,
+        text=f" {text}",
+        image=icon,
+        compound="left",
+        style="BTN.TButton",
+        command=command,
+        cursor="hand2"
+    )
+    button.image = icon
+    return button
 
 def init_ttk_styles():
     styles = ttk.Style()

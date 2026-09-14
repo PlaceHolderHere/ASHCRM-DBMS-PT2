@@ -182,12 +182,11 @@ class StaffPage(tk.Frame):
             padx=4
         )
 
-        create_btn = ttk.Button(
+        create_btn = globals.create_styled_button(
             search_frame,
+            photo_path="Assets/Icons/Create.png",
             text="Create Profile",
-            command=self.open_create_staff_popup,
-            style="BTN.TButton",
-            cursor="hand2"
+            command=self.open_create_staff_popup
         )
         create_btn.grid(
             row=0,
