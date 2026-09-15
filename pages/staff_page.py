@@ -379,8 +379,61 @@ class StaffDetailWindow(tk.Toplevel):
         self._create_widgets()
 
     def _create_widgets(self):
-        container = tk.Frame(self, background=globals.BACKGROUND_COLOR)
-        container.pack(expand=True, fill="both")
+        # Base container canvas setup for scrolling
+        canvas = tk.Canvas(
+            self,
+            bg=globals.BACKGROUND_COLOR,
+            highlightthickness=0,
+            bd=0
+        )
+        scrollbar = ttk.Scrollbar(
+            self,
+            orient="vertical",
+            command=canvas.yview,
+            style="SCROLL.TScrollbar"
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # The inner container that holds all widgets
+        container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
+        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+
+        # Binds to handle scrolling region and full-width resizing
+        container.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(canvas_window, width=e.width)
+        )
+
+        def _on_mousewheel(event):
+            # Windows/macOS event.delta vs Linux event.num
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            # Windows and macOS
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            # Linux (scroll up / scroll down)
+            canvas.bind_all("<Button-4>", _on_mousewheel)
+            canvas.bind_all("<Button-5>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        self.bind("<Enter>", _bind_mousewheel)
+        self.bind("<Leave>", _unbind_mousewheel)
 
         # TITLE
         tk.Label(
