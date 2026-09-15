@@ -11,6 +11,7 @@ class App:
         self.connection = create_database_connection(env_variables)
         self.cursor = self.connection.cursor()
         self.log_file_path = "log.txt"
+        self.current_user = None
 
         # Variables
         self._resize_timer = None
@@ -37,7 +38,7 @@ class App:
         current_time = datetime.now()
         timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
         with open(self.log_file_path, "a") as file:
-            file.write(f"{timestamp} {message}\n")
+            file.write(f"{timestamp} {message}; USER = {self.current_user}\n")
 
     def start_app(self):
         self.load_pages()

@@ -169,6 +169,7 @@ class LogInPage(tk.Frame):
 
         # Temporary Authentication
         if username == "admin" and password == "0000":
+            controller.current_user = username
             controller.render_page("HOME")  # Sends user to home page
             messagebox.showinfo("Login Successful", f"Welcome {username}")
         else:
