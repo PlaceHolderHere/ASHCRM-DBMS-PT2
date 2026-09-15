@@ -210,7 +210,6 @@ class StaffPage(tk.Frame):
 
         self.search_entry = ttk.Entry(
             search_frame,
-            width=40,
             style="ENTRY.TEntry"
         )
         self.search_entry.grid(
@@ -223,7 +222,6 @@ class StaffPage(tk.Frame):
         search_btn = ttk.Button(
             search_frame,
             text="Search",
-            width=12,
             command=self.search_records,
             style="BTN.TButton",
             cursor="hand2"
@@ -238,7 +236,6 @@ class StaffPage(tk.Frame):
         show_all_btn = ttk.Button(
             search_frame,
             text="Show All",
-            width=12,
             command=self.load_records,
             style="BTN.TButton",
             cursor="hand2"
@@ -460,7 +457,6 @@ class StaffDetailWindow(tk.Toplevel):
         ttk.Button(
             container,
             text="Save",
-            width=15,
             style="BTN_SOLID.TButton",
             command=self.save_update
         ).pack(
@@ -473,7 +469,6 @@ class StaffDetailWindow(tk.Toplevel):
         ttk.Button(
             container,
             text="Cancel",
-            width=15,
             style="BTN.TButton",
             command=self.on_close
         ).pack(
@@ -605,7 +600,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
         self.name_entry = ttk.Entry(
             form_frame,
-            width=25,
             style="ENTRY.TEntry"
         )
         self.name_entry.grid(
@@ -629,7 +623,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
         self.position_entry = ttk.Entry(
             form_frame,
-            width=25,
             style="ENTRY.TEntry"
         )
 
@@ -654,7 +647,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
         self.contact_number_entry = ttk.Entry(
             form_frame,
-            width=25,
             style="ENTRY.TEntry"
         )
 
@@ -679,7 +671,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
         self.email_entry = ttk.Entry(
             form_frame,
-            width=25,
             style="ENTRY.TEntry"
         )
 
@@ -698,7 +689,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         ttk.Button(
             button_frame,
             text="Cancel",
-            width=15,
             command=self.on_close_attempt,
             style="BTN.TButton",
             cursor="hand2"
@@ -712,7 +702,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         ttk.Button(
             button_frame,
             text="Submit",
-            width=15,
             command=self.add_staff_record,
             style="BTN.TButton",
             cursor="hand2"
@@ -726,7 +715,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         ttk.Button(
             button_frame,
             text="Clear",
-            width=15,
             command=self.clear_fields,
             style="BTN.TButton",
             cursor="hand2"
