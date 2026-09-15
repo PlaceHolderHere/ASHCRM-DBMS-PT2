@@ -46,6 +46,7 @@ class StaffPage(tk.Frame):
             self.cursor.executemany(query, selected_ids)
             self.controller.connection.commit()
             self.search_records()
+            self.controller.add_log(f"Deleted the following ids from staff table: {selected_ids}")
             messagebox.showinfo("Deleted Records", "Successfully Deleted all Selected Records")
         except mysql.connector.Error as e:
             self.controller.connection.rollback()
@@ -521,6 +522,7 @@ class StaffDetailWindow(tk.Toplevel):
         try:
             self.controller.cursor.execute(query, form_data)
             self.controller.connection.commit()
+            self.controller.add_log(f"Updated the Information of {form_data.get("name")} in staff table")
             messagebox.showinfo("Updated Successfully!",
                                 f"Updated the Information of {form_data.get("name")} successfully!")
             self.parent.search_records()
@@ -783,6 +785,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
                 data
             )
             self.controller.connection.commit()
+            self.controller.add_log(f"Created a staff profile for {data["NAME"]} in staff table.")
             messagebox.showinfo(
                 "Success",
                 "Staff record has been added successfully."
