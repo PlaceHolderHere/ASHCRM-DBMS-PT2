@@ -544,9 +544,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
 
         # Center relative to parent
         x, y = controller.get_screen_center(globals.window_width // 2, globals.window_height // 2)
-        self.geometry(
-            f"+{x}+{y}"
-        )
+        self.geometry(f"+{x}+{y}")
 
         self.transient(controller.root)  # Keeps window on top of parent
         self.grab_set()  # Routes all user events strictly to this window
@@ -558,8 +556,61 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         self._create_widgets()
 
     def _create_widgets(self):
-        container = tk.Frame(self, bg=globals.BACKGROUND_COLOR)
-        container.pack(fill="both", expand=True)
+        # Base container canvas setup for scrolling
+        canvas = tk.Canvas(
+            self,
+            bg=globals.BACKGROUND_COLOR,
+            highlightthickness=0,
+            bd=0
+        )
+        scrollbar = ttk.Scrollbar(
+            self,
+            orient="vertical",
+            command=canvas.yview,
+            style="SCROLL.TScrollbar"
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # The inner container that holds all widgets
+        container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
+        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+
+        # Binds to handle scrolling region and full-width resizing
+        container.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(canvas_window, width=e.width)
+        )
+
+        def _on_mousewheel(event):
+            # Windows/macOS event.delta vs Linux event.num
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            # Windows and macOS
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            # Linux (scroll up / scroll down)
+            canvas.bind_all("<Button-4>", _on_mousewheel)
+            canvas.bind_all("<Button-5>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        self.bind("<Enter>", _bind_mousewheel)
+        self.bind("<Leave>", _unbind_mousewheel)
 
         # TITLE
         title = tk.Label(
@@ -569,7 +620,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             background=globals.BACKGROUND_COLOR,
             foreground=globals.ACCENT_COLOR
         )
-
         title.pack(pady=(15, 5))
 
         # FORM
@@ -579,7 +629,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             padx=16,
             pady=16
         )
-
         form_frame.pack(
             fill="x",
             padx=20,
@@ -625,7 +674,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             form_frame,
             style="ENTRY.TEntry"
         )
-
         self.position_entry.grid(
             row=0,
             column=3,
@@ -649,7 +697,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             form_frame,
             style="ENTRY.TEntry"
         )
-
         self.contact_number_entry.grid(
             row=1,
             column=1,
@@ -673,7 +720,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             form_frame,
             style="ENTRY.TEntry"
         )
-
         self.email_entry.grid(
             row=1,
             column=3,
@@ -682,10 +728,10 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         )
 
         # BUTTONS
-        button_frame = tk.Frame(container)
+        button_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR)
         button_frame.pack(pady=10)
 
-        # UPDATE RECORD
+        # CANCEL
         ttk.Button(
             button_frame,
             text="Cancel",
@@ -724,7 +770,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             padx=5
         )
 
-
     def add_staff_record(self):
         data = self.get_form_data()
         query = """
@@ -737,11 +782,10 @@ class CreateStaffProfilePopUp(tk.Toplevel):
                 query,
                 data
             )
-
             self.controller.connection.commit()
             messagebox.showinfo(
                 "Success",
-            "Staff record has been added successfully."
+                "Staff record has been added successfully."
             )
             self.parent.search_records()
             self.close_window()
@@ -751,7 +795,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             messagebox.showerror(
                 "Database Error",
                 f"Could not add record.\n\n{e}"
-                )
+            )
 
     def clear_fields(self):
         self.name_entry.delete(0, tk.END)
@@ -768,8 +812,10 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         }
 
     def on_close_attempt(self):
-        if messagebox.askokcancel("Do you wish to close this window?",
-                "Are you sure you want to close this window? Any data you have inputted will not be saved"):
+        if messagebox.askokcancel(
+            "Do you wish to close this window?",
+            "Are you sure you want to close this window? Any data you have inputted will not be saved"
+        ):
             self.close_window()
 
     def close_window(self):
