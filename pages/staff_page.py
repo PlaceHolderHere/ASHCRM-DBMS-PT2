@@ -500,7 +500,7 @@ class StaffDetailWindow(tk.Toplevel):
 
     def save_update(self):
         if not self.is_data_changed():
-            messagebox.showinfo("No Changes to Be Saved", "No changes have been made to be saved to the database.")
+            self.destroy()
             return
 
         form_data = self.get_entry_data()
