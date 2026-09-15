@@ -11,6 +11,7 @@ class StaffPage(tk.Frame):
         self.cursor = controller.cursor
         self.controller = controller
         self.keyword = ""
+        self._TABLE_NAME = "staff"
         self._create_widgets()
 
         # Run a function when a user double clicks on a row
@@ -41,12 +42,12 @@ class StaffPage(tk.Frame):
             row = self.tree.item(row_id, "values")
             selected_ids.append((row[0],))
 
-        query = "DELETE FROM staff WHERE staff_id = %s;"
+        query = f"DELETE FROM {self._TABLE_NAME} WHERE staff_id = %s;"
         try:
             self.cursor.executemany(query, selected_ids)
             self.controller.connection.commit()
             self.search_records()
-            self.controller.add_log(f"Deleted the following ids from staff table: {selected_ids}")
+            self.controller.add_log(f"Deleted the following ids from {self._TABLE_NAME} table: {selected_ids}")
             messagebox.showinfo("Deleted Records", "Successfully Deleted all Selected Records")
         except mysql.connector.Error as e:
             self.controller.connection.rollback()
@@ -89,7 +90,7 @@ class StaffPage(tk.Frame):
                     position,
                     email,
                     contact_number
-                FROM staff
+                FROM {self._TABLE_NAME}
                 WHERE staff_id LIKE %s
                     OR name LIKE %s
                     OR position LIKE %s
@@ -137,7 +138,7 @@ class StaffPage(tk.Frame):
                     position,
                     email,
                     contact_number
-                FROM staff
+                FROM {self._TABLE_NAME}
                 ORDER BY staff_id
             """
 
