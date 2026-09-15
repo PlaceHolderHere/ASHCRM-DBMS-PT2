@@ -2,6 +2,7 @@ import tkinter as tk
 from database_connection import create_database_connection, get_env_variables
 from tkinter import messagebox
 import globals
+from datetime import datetime
 
 class App:
     def __init__(self):
@@ -9,6 +10,7 @@ class App:
         env_variables = get_env_variables(".env")
         self.connection = create_database_connection(env_variables)
         self.cursor = self.connection.cursor()
+        self.log_file_path = "log.txt"
 
         # Variables
         self._resize_timer = None
@@ -30,6 +32,12 @@ class App:
         # Run a function when the user:
         self.root.protocol("WM_DELETE_WINDOW", self.close_app) # Closes the window
         self.root.bind("<Configure>", self.on_configure) # Resizing the window
+
+    def add_log(self, message: str) -> None:
+        current_time = datetime.now()
+        timestamp = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        with open(self.log_file_path, "a") as file:
+            file.write(f"{timestamp} {message}\n")
 
     def start_app(self):
         self.load_pages()
