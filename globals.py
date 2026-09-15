@@ -57,13 +57,16 @@ def init_ttk_styles():
     # SCROLL BARS
     styles.configure(
         "SCROLL.TScrollbar",
-        troughcolor=BACKGROUND_COLOR,
-        background=ACCENT_COLOR,
-        bordercolor=BACKGROUND_COLOR,
+        troughcolor=PRIMARY_COLOR,
+        background=BACKGROUND_COLOR,
+        bordercolor=PRIMARY_COLOR,
         arrowcolor=BACKGROUND_COLOR,
         relief="flat",
         borderwidth=0,
-        arrowsize=0,
+        arrowsize=12,
+        gripcount=0,
+        darkcolor=BACKGROUND_COLOR,
+        lightcolor=BACKGROUND_COLOR
     )
 
     styles.layout(
