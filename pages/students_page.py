@@ -17,6 +17,10 @@ class StudentsPage(tk.Frame):
         self._TABLE_NAME = "student"
         self._create_widgets()
 
+    def open_create_student_popup(self):
+        create_student_popup = CreateStudentProfilePopUp(self.controller, self)
+        self.wait_window(create_student_popup)
+
     def delete_selected(self):
         rows = self.tree.selection()
         if not rows:
@@ -187,7 +191,7 @@ class StudentsPage(tk.Frame):
             photo_path="Assets/Icons/Create.png",
             text="Create Profile",
             style="BTN.TButton",
-            command=None
+            command=self.open_create_student_popup
         )
         create_btn.grid(
             row=0,
@@ -428,3 +432,398 @@ class StudentsPage(tk.Frame):
             return None
 
         return output
+
+
+class CreateStudentProfilePopUp(tk.Toplevel):
+    def __init__(self, controller, parent):
+        super().__init__(controller.root)
+        self.controller = controller
+        self.parent = parent
+
+        # Window Configuration
+        self.title("Create a Student Profile")
+        self.geometry(f"{int(globals.window_width // 1.5)}x{int(globals.window_height // 1.5)}")
+        self.resizable(False, False)
+
+        # Center relative to parent
+        x, y = controller.get_screen_center(globals.window_width // 2, globals.window_height // 2)
+        self.geometry(f"+{x}+{y}")
+
+        self.transient(controller.root)
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.on_close_attempt)
+        self._create_widgets()
+
+    def _create_widgets(self):
+        canvas = tk.Canvas(
+            self,
+            bg=globals.BACKGROUND_COLOR,
+            highlightthickness=0,
+            bd=0
+        )
+        scrollbar = ttk.Scrollbar(
+            self,
+            orient="vertical",
+            command=canvas.yview,
+            style="SCROLL.TScrollbar"
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
+        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+
+        container.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_window, width=e.width))
+
+        def _on_mousewheel(event):
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            canvas.bind_all("<Button-4>", _on_mousewheel)
+            canvas.bind_all("<Button-5>", _on_mousewheel)
+
+        self.bind("<Enter>", _bind_mousewheel)
+
+        title = tk.Label(
+            container,
+            text="STUDENTS",
+            font=("Arial", 22, "bold"),
+            background=globals.BACKGROUND_COLOR,
+            foreground=globals.ACCENT_COLOR
+        )
+        title.pack(pady=(15, 5))
+
+        # --- COMBINED FORM CONTAINER ---
+        form_frame = tk.LabelFrame(
+            container,
+            text="Student Information & Medical History",
+            padx=16,
+            pady=16,
+            background=globals.BACKGROUND_COLOR,
+            foreground=globals.ACCENT_COLOR
+        )
+        form_frame.pack(fill="x", padx=20, pady=4)
+
+        # 1. Standard Text Entries
+        form_entries = {
+            "name": "Name",
+            "section": "Section",
+            "address": "Address",
+            "religion": "Religion",
+            "nationality": "Nationality",
+            "emergency_contact_number": "Emergency Contact Number"
+        }
+
+        self.entry_widgets = {}
+
+        entry_keys = list(form_entries.keys())
+        entry_keys.insert(3, "date_of_birth")
+
+        num_of_cols = 2
+        last_row = 0
+
+        # Month mapping dict for UI display -> MySQL conversion
+        self.month_map = {
+            "January": "01",
+            "February": "02",
+            "March": "03",
+            "April": "04",
+            "May": "05",
+            "June": "06",
+            "July": "07",
+            "August": "08",
+            "September": "09",
+            "October": "10",
+            "November": "11",
+            "December": "12"
+        }
+
+        for index, key in enumerate(entry_keys):
+            column = index % num_of_cols
+            row = index // num_of_cols
+            last_row = row
+
+            if key == "date_of_birth":
+                tk.Label(
+                    form_frame,
+                    text="Date of Birth",
+                    font=("Helvetica", 11, "bold"),
+                    foreground=globals.ACCENT_COLOR,
+                    background=globals.BACKGROUND_COLOR
+                ).grid(row=row, column=column * num_of_cols, sticky="w", pady=8)
+
+                # Date Picker Frame (Month Dropdown / Day / Year)
+                dob_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+                dob_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+
+                month_names = list(self.month_map.keys())
+                days = [f"{i:02d}" for i in range(1, 32)]
+                years = [str(i) for i in range(2026, 1940, -1)]
+
+                self.dob_month = tk.StringVar(value="January")
+                self.dob_day = tk.StringVar(value="01")
+                self.dob_year = tk.StringVar(value="2005")
+
+                ttk.Combobox(dob_frame, textvariable=self.dob_month, values=month_names, state="readonly", width=10,
+                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                ttk.Combobox(dob_frame, textvariable=self.dob_day, values=days, state="readonly", width=3,
+                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                ttk.Combobox(dob_frame, textvariable=self.dob_year, values=years, state="readonly", width=6,
+                             style="dropdown.TCombobox").pack(side="left")
+
+            else:
+                label = form_entries[key]
+                tk.Label(
+                    form_frame,
+                    text=label,
+                    font=("Helvetica", 11, "bold"),
+                    foreground=globals.ACCENT_COLOR,
+                    background=globals.BACKGROUND_COLOR
+                ).grid(row=row, column=column * num_of_cols, sticky="w", pady=8)
+
+                self.entry_widgets[key] = ttk.Entry(
+                    form_frame,
+                    style="ENTRY.TEntry"
+                )
+                self.entry_widgets[key].grid(
+                    row=row,
+                    column=(column * num_of_cols) + 1,
+                    sticky="w",
+                    pady=8,
+                    padx=(4, 16)
+                )
+
+        # Separator Line between basic info and medical history
+        sep_row = last_row + 1
+        ttk.Separator(form_frame, orient="horizontal").grid(
+            row=sep_row, column=0, columnspan=4, sticky="ew", pady=15
+        )
+
+        # 2. Family History
+        fam_row = sep_row + 1
+        tk.Label(
+            form_frame, text="Family History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=fam_row, column=0, sticky="w", pady=4)
+
+        fam_box = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+        fam_box.grid(row=fam_row, column=1, sticky="w", pady=4)
+
+        self.fam_hypertension = tk.BooleanVar(value=False)
+        self.fam_diabetes = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            fam_box, text="Hypertension", variable=self.fam_hypertension, style="checkbox.TCheckbutton"
+        ).pack(side="left", padx=(0, 10))
+        ttk.Checkbutton(
+            fam_box, text="Diabetes", variable=self.fam_diabetes, style="checkbox.TCheckbutton"
+        ).pack(side="left")
+
+        # 3. Medical History
+        med_row = fam_row + 1
+        tk.Label(
+            form_frame, text="Medical History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=med_row, column=0, sticky="w", pady=4)
+
+        med_box = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+        med_box.grid(row=med_row, column=1, sticky="w", pady=4)
+
+        self.med_penicillin = tk.BooleanVar(value=False)
+        self.med_asthma = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            med_box, text="Allergy: Penicillin", variable=self.med_penicillin, style="checkbox.TCheckbutton"
+        ).pack(side="left", padx=(0, 10))
+        ttk.Checkbutton(
+            med_box, text="Asthma", variable=self.med_asthma, style="checkbox.TCheckbutton"
+        ).pack(side="left")
+
+        # 4. Immunizations
+        imm_row = med_row + 1
+        vac_options = ["Not Vaccinated", "Fully Vaccinated", "Up to date"]
+
+        tk.Label(
+            form_frame, text="COVID-19 Status", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=imm_row, column=0, sticky="w", pady=8)
+
+        self.imm_covid = tk.StringVar(value="Fully Vaccinated")
+        ttk.Combobox(
+            form_frame, textvariable=self.imm_covid, values=vac_options, state="readonly", width=18,
+            style="dropdown.TCombobox"
+        ).grid(row=imm_row, column=1, sticky="w", pady=8, padx=(4, 16))
+
+        tk.Label(
+            form_frame, text="Tetanus Status", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=imm_row, column=2, sticky="w", pady=8)
+
+        self.imm_tetanus = tk.StringVar(value="Up to date")
+        ttk.Combobox(
+            form_frame, textvariable=self.imm_tetanus, values=vac_options, state="readonly", width=18,
+            style="dropdown.TCombobox"
+        ).grid(row=imm_row, column=3, sticky="w", pady=8, padx=(4, 16))
+
+        # 5. Psychosocial & Sexual History
+        psy_row = imm_row + 1
+
+        tk.Label(
+            form_frame, text="Stress Level", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=psy_row, column=0, sticky="w", pady=8)
+
+        self.psy_stress = tk.StringVar(value="Moderate")
+        ttk.Combobox(
+            form_frame, textvariable=self.psy_stress, values=["Low", "Moderate", "High"], state="readonly", width=18,
+            style="dropdown.TCombobox"
+        ).grid(row=psy_row, column=1, sticky="w", pady=8, padx=(4, 16))
+
+        tk.Label(
+            form_frame, text="Sexual History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=psy_row, column=2, sticky="w", pady=8)
+
+        self.sex_active = tk.BooleanVar(value=False)
+        ttk.Checkbutton(
+            form_frame, text="Sexually Active", variable=self.sex_active, style="checkbox.TCheckbutton"
+        ).grid(row=psy_row, column=3, sticky="w", pady=8, padx=(4, 16))
+
+        # --- BUTTONS ---
+        button_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR)
+        button_frame.pack(pady=15)
+
+        ttk.Button(
+            button_frame,
+            text="Cancel",
+            command=self.on_close_attempt,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).grid(row=0, column=0, padx=5)
+
+        ttk.Button(
+            button_frame,
+            text="Submit",
+            command=self.add_staff_record,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).grid(row=0, column=1, padx=5)
+
+        ttk.Button(
+            button_frame,
+            text="Clear",
+            command=self.clear_fields,
+            style="BTN_RED.TButton",
+            cursor="hand2"
+        ).grid(row=0, column=3, padx=5)
+
+    def add_staff_record(self):
+        if self.is_form_empty():
+            messagebox.showerror("Form is Empty!", "Error! Form is empty, please fill in the form.")
+            return
+
+        data = self.get_form_data()
+        query = """
+                INSERT INTO student 
+                    (name, section, address, date_of_birth, religion, nationality, emergency_contact_number, 
+                    family_history, medical_history, immunizations, psychosocial_history, sexual_history)
+                VALUES (%(name)s, %(section)s, %(address)s, %(date_of_birth)s, %(religion)s, %(nationality)s,
+                    %(emergency_contact_number)s, %(family_history)s, %(medical_history)s, %(immunizations)s,
+                    %(psychosocial_history)s, %(sexual_history)s)
+                """
+        try:
+            self.controller.cursor.execute(query, data)
+            self.controller.connection.commit()
+            self.controller.add_log(f"Created a student profile for {data['name']} in student table.")
+            messagebox.showinfo(
+                "Success",
+                "Student record has been added successfully."
+            )
+            self.parent.search_records()
+            self.close_window()
+
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror(
+                "Database Error",
+                f"Could not add record.\n\n{e}"
+            )
+
+    def clear_fields(self):
+        for entry in self.entry_widgets.values():
+            entry.delete(0, tk.END)
+
+        # Reset DOB
+        self.dob_month.set("January")
+        self.dob_day.set("01")
+        self.dob_year.set("2005")
+
+        # Reset medical & history values
+        self.fam_hypertension.set(False)
+        self.fam_diabetes.set(False)
+        self.med_penicillin.set(False)
+        self.med_asthma.set(False)
+        self.imm_covid.set("Fully Vaccinated")
+        self.imm_tetanus.set("Up to date")
+        self.psy_stress.set("Moderate")
+        self.sex_active.set(False)
+
+    def is_form_empty(self) -> bool:
+        for entry in self.entry_widgets.values():
+            if entry.get().strip():
+                return False
+        return True
+
+    def get_form_data(self) -> dict:
+        form_data = {}
+
+        # Collect standard text inputs
+        for label, entry in self.entry_widgets.items():
+            form_data[label] = entry.get()
+
+        # Map full month name to numeric string (e.g., "January" -> "01")
+        selected_month_num = self.month_map.get(self.dob_month.get(), "01")
+
+        # Format Date of Birth into MySQL DATE format (YYYY-MM-DD)
+        form_data["date_of_birth"] = f"{self.dob_year.get()}-{selected_month_num}-{self.dob_day.get()}"
+
+        # Build JSON strings for history fields
+        form_data["family_history"] = json.dumps({
+            "hypertension": self.fam_hypertension.get(),
+            "diabetes": self.fam_diabetes.get()
+        })
+        form_data["medical_history"] = json.dumps({
+            "allergies": ["Penicillin"] if self.med_penicillin.get() else [],
+            "asthma": self.med_asthma.get()
+        })
+        form_data["immunizations"] = json.dumps({
+            "covid19": self.imm_covid.get(),
+            "tetanus": self.imm_tetanus.get()
+        })
+        form_data["psychosocial_history"] = json.dumps({
+            "stress_level": self.psy_stress.get()
+        })
+        form_data["sexual_history"] = json.dumps({
+            "active": self.sex_active.get()
+        })
+
+        return form_data
+
+    def on_close_attempt(self):
+        if self.is_form_empty() or messagebox.askokcancel(
+            "Do you wish to close this window?",
+            "Are you sure you want to close this window? Any data you have inputted will not be saved"
+        ):
+            self.close_window()
+
+    def close_window(self):
+        self.grab_release()
+        self.destroy()
