@@ -17,6 +17,18 @@ class StudentsPage(tk.Frame):
         self._TABLE_NAME = "student"
         self._create_widgets()
 
+        self.tree.bind("<Double-1>", self.open_details_popup)
+
+    def open_details_popup(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        student_id = self.tree.item(selected[0], "values")[0]
+
+        # Will open instantly the window from the separate file
+        StudentDetailWindow(self.controller, self, student_id)
+
     def open_create_student_popup(self):
         create_student_popup = CreateStudentProfilePopUp(self.controller, self)
         self.wait_window(create_student_popup)
@@ -827,3 +839,470 @@ class CreateStudentProfilePopUp(tk.Toplevel):
     def close_window(self):
         self.grab_release()
         self.destroy()
+
+class StudentDetailWindow(tk.Toplevel):
+    def __init__(self, controller, parent, student_id):
+        super().__init__(controller.root)
+        self.controller = controller
+        self.parent = parent
+        self.student_id = student_id
+        self.student_data = {}
+
+        # Fetch student record from database
+        if not self._fetch_student_data():
+            self.destroy()
+            return
+
+        # Window Configuration
+        self.title("Student Profile Details")
+        self.geometry(f"{int(globals.window_width // 1.5)}x{int(globals.window_height // 1.5)}")
+        self.resizable(False, False)
+
+        # Center relative to parent
+        x, y = controller.get_screen_center(globals.window_width // 2, globals.window_height // 2)
+        self.geometry(f"+{x}+{y}")
+
+        self.transient(controller.root)  # Keeps window on top of parent
+        self.grab_set()  # Routes all user events strictly to this window
+
+        # Run a Function When the User Closes the Window
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+        # Month mapping dict for UI display -> MySQL conversion
+        self.month_map = {
+            "January": "01", "February": "02", "March": "03", "April": "04",
+            "May": "05", "June": "06", "July": "07", "August": "08",
+            "September": "09", "October": "10", "November": "11", "December": "12"
+        }
+        self.rev_month_map = {v: k for k, v in self.month_map.items()}
+
+        # Create UI Widgets & populate
+        self._create_widgets()
+        self._load_student_data()
+
+    def _fetch_student_data(self) -> bool:
+        query = """
+            SELECT 
+                student_id, name, section, address, date_of_birth, religion, 
+                nationality, emergency_contact_number, family_history, 
+                medical_history, immunizations, psychosocial_history, sexual_history
+            FROM student
+            WHERE student_id = %s
+        """
+        try:
+            self.controller.cursor.execute(query, (self.student_id,))
+            record = self.controller.cursor.fetchone()
+
+            if not record:
+                messagebox.showerror("Error", f"No record found for Student ID: {self.student_id}")
+                return False
+
+            # Map tuple columns to dictionary keys matching database column names
+            columns = [column[0] for column in self.controller.cursor.description]
+            self.student_data = dict(zip(columns, record))
+            return True
+
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Failed to fetch student data.\n\n{e}")
+            return False
+
+    def _create_widgets(self):
+        # Base container canvas setup for scrolling
+        canvas = tk.Canvas(
+            self,
+            bg=globals.BACKGROUND_COLOR,
+            highlightthickness=0,
+            bd=0
+        )
+        scrollbar = ttk.Scrollbar(
+            self,
+            orient="vertical",
+            command=canvas.yview,
+            style="SCROLL.TScrollbar"
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        # The inner container that holds all widgets
+        container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
+        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+
+        # Binds to handle scrolling region and full-width resizing
+        container.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_window, width=e.width))
+
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            canvas.unbind_all("<MouseWheel>")
+
+        self.bind("<Enter>", _bind_mousewheel)
+        self.bind("<Leave>", _unbind_mousewheel)
+
+        # TITLE
+        tk.Label(
+            container,
+            text="STUDENTS",
+            font=("Arial", 22, "bold"),
+            foreground=globals.ACCENT_COLOR,
+            background=globals.BACKGROUND_COLOR
+        ).pack(pady=(15, 5))
+
+        # --- COMBINED FORM CONTAINER ---
+        form_frame = tk.LabelFrame(
+            container,
+            text="Student Information & Medical History",
+            padx=16,
+            pady=16,
+            background=globals.BACKGROUND_COLOR,
+            foreground=globals.ACCENT_COLOR
+        )
+        form_frame.pack(fill="x", padx=20, pady=4)
+
+        # 1. Standard Text Entries & Student ID
+        form_entries = {
+            "student_id": "Student ID",
+            "name": "Name",
+            "section": "Section",
+            "address": "Address",
+            "date_of_birth": "Date of Birth",
+            "religion": "Religion",
+            "nationality": "Nationality",
+            "emergency_contact_number": "Emergency Contact Number"
+        }
+
+        self.entry_widgets = {}
+        num_of_cols = 2
+        last_row = 0
+
+        for index, (key, label_text) in enumerate(form_entries.items()):
+            column = index % num_of_cols
+            row = index // num_of_cols
+            last_row = row
+
+            tk.Label(
+                form_frame,
+                text=label_text,
+                font=("Helvetica", 11, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).grid(row=row, column=column * num_of_cols, sticky="w", pady=8)
+
+            if key == "student_id":
+                self.student_id_label = tk.Label(
+                    form_frame,
+                    text="",
+                    font=("Helvetica", 11, "bold"),
+                    background=globals.BACKGROUND_COLOR,
+                    foreground=globals.ACCENT_COLOR
+                )
+                self.student_id_label.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+
+            elif key == "date_of_birth":
+                dob_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+                dob_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+
+                month_names = list(self.month_map.keys())
+                days = [f"{i:02d}" for i in range(1, 32)]
+                years = [str(i) for i in range(2026, 1940, -1)]
+
+                self.dob_month = tk.StringVar(value="January")
+                self.dob_day = tk.StringVar(value="01")
+                self.dob_year = tk.StringVar(value="2005")
+
+                ttk.Combobox(dob_frame, textvariable=self.dob_month, values=month_names, state="readonly", width=10,
+                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                ttk.Combobox(dob_frame, textvariable=self.dob_day, values=days, state="readonly", width=3,
+                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                ttk.Combobox(dob_frame, textvariable=self.dob_year, values=years, state="readonly", width=6,
+                             style="dropdown.TCombobox").pack(side="left")
+
+            else:
+                self.entry_widgets[key] = ttk.Entry(
+                    form_frame,
+                    style="ENTRY.TEntry"
+                )
+                self.entry_widgets[key].grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8,
+                                             padx=(4, 16))
+
+        # Separator Line
+        sep_row = last_row + 1
+        ttk.Separator(form_frame, orient="horizontal").grid(
+            row=sep_row, column=0, columnspan=4, sticky="ew", pady=15
+        )
+
+        # 2. Family History
+        fam_row = sep_row + 1
+        tk.Label(
+            form_frame, text="Family History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=fam_row, column=0, sticky="w", pady=4)
+
+        fam_box = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+        fam_box.grid(row=fam_row, column=1, sticky="w", pady=4)
+
+        self.fam_hypertension = tk.BooleanVar(value=False)
+        self.fam_diabetes = tk.BooleanVar(value=False)
+        ttk.Checkbutton(fam_box, text="Hypertension", variable=self.fam_hypertension,
+                        style="checkbox.TCheckbutton").pack(side="left", padx=(0, 10))
+        ttk.Checkbutton(fam_box, text="Diabetes", variable=self.fam_diabetes, style="checkbox.TCheckbutton").pack(
+            side="left")
+
+        # 3. Medical History
+        med_row = fam_row + 1
+        tk.Label(
+            form_frame, text="Medical History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=med_row, column=0, sticky="w", pady=4)
+
+        med_box = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+        med_box.grid(row=med_row, column=1, sticky="w", pady=4)
+
+        self.med_penicillin = tk.BooleanVar(value=False)
+        self.med_asthma = tk.BooleanVar(value=False)
+        ttk.Checkbutton(med_box, text="Allergy: Penicillin", variable=self.med_penicillin,
+                        style="checkbox.TCheckbutton").pack(side="left", padx=(0, 10))
+        ttk.Checkbutton(med_box, text="Asthma", variable=self.med_asthma, style="checkbox.TCheckbutton").pack(
+            side="left")
+
+        # 4. Immunizations
+        imm_row = med_row + 1
+        vac_options = ["Not Vaccinated", "Fully Vaccinated", "Up to date"]
+
+        tk.Label(
+            form_frame, text="COVID-19 Status", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=imm_row, column=0, sticky="w", pady=8)
+
+        self.imm_covid = tk.StringVar(value="Fully Vaccinated")
+        ttk.Combobox(form_frame, textvariable=self.imm_covid, values=vac_options, state="readonly", width=18,
+                     style="dropdown.TCombobox").grid(row=imm_row, column=1, sticky="w", pady=8, padx=(4, 16))
+
+        tk.Label(
+            form_frame, text="Tetanus Status", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=imm_row, column=2, sticky="w", pady=8)
+
+        self.imm_tetanus = tk.StringVar(value="Up to date")
+        ttk.Combobox(form_frame, textvariable=self.imm_tetanus, values=vac_options, state="readonly", width=18,
+                     style="dropdown.TCombobox").grid(row=imm_row, column=3, sticky="w", pady=8, padx=(4, 16))
+
+        # 5. Psychosocial & Sexual History
+        psy_row = imm_row + 1
+
+        tk.Label(
+            form_frame, text="Stress Level", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=psy_row, column=0, sticky="w", pady=8)
+
+        self.psy_stress = tk.StringVar(value="Moderate")
+        ttk.Combobox(form_frame, textvariable=self.psy_stress, values=["Low", "Moderate", "High"], state="readonly",
+                     width=18, style="dropdown.TCombobox").grid(row=psy_row, column=1, sticky="w", pady=8, padx=(4, 16))
+
+        tk.Label(
+            form_frame, text="Sexual History", font=("Helvetica", 11, "bold"),
+            foreground=globals.ACCENT_COLOR, background=globals.BACKGROUND_COLOR
+        ).grid(row=psy_row, column=2, sticky="w", pady=8)
+
+        self.sex_active = tk.BooleanVar(value=False)
+        ttk.Checkbutton(form_frame, text="Sexually Active", variable=self.sex_active,
+                        style="checkbox.TCheckbutton").grid(row=psy_row, column=3, sticky="w", pady=8, padx=(4, 16))
+
+        # --- BUTTONS ---
+        button_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR)
+        button_frame.pack(pady=15)
+
+        ttk.Button(
+            button_frame,
+            text="Cancel",
+            command=self.on_close,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).grid(row=0, column=0, padx=5)
+
+        ttk.Button(
+            button_frame,
+            text="Save",
+            command=self.save_update,
+            style="BTN.TButton",
+            cursor="hand2"
+        ).grid(row=0, column=1, padx=5)
+
+    def _parse_json_field(self, data) -> dict:
+        if isinstance(data, dict):
+            return data
+        if isinstance(data, str) and data.strip():
+            try:
+                return json.loads(data)
+            except json.JSONDecodeError:
+                pass
+        return {}
+
+    def _load_student_data(self):
+        # Set Student ID Label
+        self.student_id_label.config(text=str(self.student_data.get("student_id", "")))
+
+        # Fill text entries
+        for field, entry in self.entry_widgets.items():
+            entry.delete(0, tk.END)
+            entry.insert(0, str(self.student_data.get(field, "")))
+
+        # Parse Date of Birth (Expected format: YYYY-MM-DD)
+        dob = str(self.student_data.get("date_of_birth", ""))
+        if dob and len(dob.split("-")) == 3:
+            y, m, d = dob.split("-")
+            self.dob_year.set(y)
+            self.dob_month.set(self.rev_month_map.get(m, "January"))
+            self.dob_day.set(f"{int(d):02d}")
+
+        # Parse Family History
+        fam = self._parse_json_field(self.student_data.get("family_history"))
+        self.fam_hypertension.set(fam.get("hypertension", False))
+        self.fam_diabetes.set(fam.get("diabetes", False))
+
+        # Parse Medical History
+        med = self._parse_json_field(self.student_data.get("medical_history"))
+        allergies = med.get("allergies", [])
+        self.med_penicillin.set("Penicillin" in allergies)
+        self.med_asthma.set(med.get("asthma", False))
+
+        # Parse Immunizations
+        imm = self._parse_json_field(self.student_data.get("immunizations"))
+        self.imm_covid.set(imm.get("covid19", "Fully Vaccinated"))
+        self.imm_tetanus.set(imm.get("tetanus", "Up to date"))
+
+        # Parse Psychosocial & Sexual History
+        psy = self._parse_json_field(self.student_data.get("psychosocial_history"))
+        self.psy_stress.set(psy.get("stress_level", "Moderate"))
+
+        sex = self._parse_json_field(self.student_data.get("sexual_history"))
+        self.sex_active.set(sex.get("active", False))
+
+    def get_entry_data(self) -> dict:
+        form_data = {}
+        for key, entry in self.entry_widgets.items():
+            form_data[key] = entry.get()
+
+        form_data["student_id"] = self.student_data.get("student_id")
+
+        # Format Date of Birth for MySQL YYYY-MM-DD
+        selected_month_num = self.month_map.get(self.dob_month.get(), "01")
+        form_data["date_of_birth"] = f"{self.dob_year.get()}-{selected_month_num}-{self.dob_day.get()}"
+
+        # Build JSON strings
+        form_data["family_history"] = json.dumps({
+            "hypertension": self.fam_hypertension.get(),
+            "diabetes": self.fam_diabetes.get()
+        })
+        form_data["medical_history"] = json.dumps({
+            "allergies": ["Penicillin"] if self.med_penicillin.get() else [],
+            "asthma": self.med_asthma.get()
+        })
+        form_data["immunizations"] = json.dumps({
+            "covid19": self.imm_covid.get(),
+            "tetanus": self.imm_tetanus.get()
+        })
+        form_data["psychosocial_history"] = json.dumps({
+            "stress_level": self.psy_stress.get()
+        })
+        form_data["sexual_history"] = json.dumps({
+            "active": self.sex_active.get()
+        })
+
+        return form_data
+
+    def is_data_changed(self) -> bool:
+        current_data = self.get_entry_data()
+
+        # Compare text entries and DOB
+        for key in list(self.entry_widgets.keys()) + ["date_of_birth"]:
+            if str(self.student_data.get(key, "")) != str(current_data.get(key, "")):
+                return True
+
+        # Compare JSON structures
+        fam_orig = self._parse_json_field(self.student_data.get("family_history"))
+        fam_curr = json.loads(current_data["family_history"])
+        if fam_orig != fam_curr:
+            return True
+
+        med_orig = self._parse_json_field(self.student_data.get("medical_history"))
+        med_curr = json.loads(current_data["medical_history"])
+        if med_orig != med_curr:
+            return True
+
+        imm_orig = self._parse_json_field(self.student_data.get("immunizations"))
+        imm_curr = json.loads(current_data["immunizations"])
+        if imm_orig != imm_curr:
+            return True
+
+        psy_orig = self._parse_json_field(self.student_data.get("psychosocial_history"))
+        psy_curr = json.loads(current_data["psychosocial_history"])
+        if psy_orig != psy_curr:
+            return True
+
+        sex_orig = self._parse_json_field(self.student_data.get("sexual_history"))
+        sex_curr = json.loads(current_data["sexual_history"])
+        if sex_orig != sex_curr:
+            return True
+
+        return False
+
+    def save_update(self):
+        if not self.is_data_changed():
+            self.destroy()
+            return
+
+        form_data = self.get_entry_data()
+        if form_data.get("student_id") is None:
+            messagebox.showerror("ERROR! Invalid Student ID", "Error! Invalid Student ID.")
+            return
+
+        query = """
+            UPDATE student
+            SET
+                name = %(name)s,
+                section = %(section)s,
+                address = %(address)s,
+                date_of_birth = %(date_of_birth)s,
+                religion = %(religion)s,
+                nationality = %(nationality)s,
+                emergency_contact_number = %(emergency_contact_number)s,
+                family_history = %(family_history)s,
+                medical_history = %(medical_history)s,
+                immunizations = %(immunizations)s,
+                psychosocial_history = %(psychosocial_history)s,
+                sexual_history = %(sexual_history)s
+            WHERE 
+                student_id = %(student_id)s
+        """
+        try:
+            self.controller.cursor.execute(query, form_data)
+            self.controller.connection.commit()
+            self.controller.add_log(f"Updated the Information of {form_data.get('name')} in student table.")
+            messagebox.showinfo("Updated Successfully!",
+                                f"Updated the Information of {form_data.get('name')} successfully!")
+            self.parent.search_records()
+            self.destroy()
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror(
+                "ERROR! Could not Update Record",
+                f"An error occurred while trying to update the profile of {form_data.get('name')}\n\nError Message: {e}"
+            )
+
+    def on_close(self):
+        if not self.is_data_changed():
+            self.destroy()
+            return
+
+        if messagebox.askokcancel(
+            "Unsaved Changes",
+            "You have unsaved changes, are you sure you want to close this window?"
+        ):
+            self.destroy()
