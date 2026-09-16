@@ -684,7 +684,8 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             container,
             text="Staff Information",
             padx=16,
-            pady=16
+            pady=16,
+            background=globals.BACKGROUND_COLOR
         )
         form_frame.pack(
             fill="x",
@@ -692,97 +693,38 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             pady=4
         )
 
-        # STAFF NAME
-        tk.Label(
-            form_frame,
-            text="Staff Name"
-        ).grid(
-            row=0,
-            column=0,
-            sticky="w",
-            padx=5,
-            pady=5
-        )
+        form_entries = ["NAME", "POSITION", "CONTACT", "EMAIL"]
+        self.entry_widgets = {}
+        num_of_cols = 2
+        for index, label in enumerate(form_entries):
+            column = index % num_of_cols
+            row = index // num_of_cols
 
-        self.name_entry = ttk.Entry(
-            form_frame,
-            style="ENTRY.TEntry"
-        )
-        self.name_entry.grid(
-            row=0,
-            column=1,
-            padx=5,
-            pady=5
-        )
+            # THE LABELS/COLUMN OF INFO
+            tk.Label(
+                form_frame,
+                text=label.title(),
+                font=("Helvetica", 11, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).grid(
+                row=row,
+                column=column * num_of_cols,
+                sticky="w",
+                pady=8
+            )
 
-        # STAFF POSITION
-        tk.Label(
-            form_frame,
-            text="Position"
-        ).grid(
-            row=0,
-            column=2,
-            sticky="w",
-            padx=5,
-            pady=5
-        )
-
-        self.position_entry = ttk.Entry(
-            form_frame,
-            style="ENTRY.TEntry"
-        )
-        self.position_entry.grid(
-            row=0,
-            column=3,
-            padx=5,
-            pady=5
-        )
-
-        # STAFF CONTACT NUMBER
-        tk.Label(
-            form_frame,
-            text="Contact Number"
-        ).grid(
-            row=1,
-            column=0,
-            sticky="w",
-            padx=5,
-            pady=5
-        )
-
-        self.contact_number_entry = ttk.Entry(
-            form_frame,
-            style="ENTRY.TEntry"
-        )
-        self.contact_number_entry.grid(
-            row=1,
-            column=1,
-            padx=5,
-            pady=5
-        )
-
-        # STAFF EMAIL
-        tk.Label(
-            form_frame,
-            text="Email"
-        ).grid(
-            row=1,
-            column=2,
-            sticky="w",
-            padx=(20, 5),
-            pady=5
-        )
-
-        self.email_entry = ttk.Entry(
-            form_frame,
-            style="ENTRY.TEntry"
-        )
-        self.email_entry.grid(
-            row=1,
-            column=3,
-            padx=5,
-            pady=5
-        )
+            self.entry_widgets[label] = ttk.Entry(
+                form_frame,
+                style="ENTRY.TEntry"
+            )
+            self.entry_widgets[label].grid(
+                row=row,
+                column=(column * num_of_cols) + 1,
+                sticky="w",
+                pady=8,
+                padx=(4, 16)
+            )
 
         # BUTTONS
         button_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR)
@@ -855,18 +797,11 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             )
 
     def clear_fields(self):
-        self.name_entry.delete(0, tk.END)
-        self.position_entry.delete(0, tk.END)
-        self.contact_number_entry.delete(0, tk.END)
-        self.email_entry.delete(0, tk.END)
+        for entry in self.entry_widgets.values():
+            entry.delete(0, tk.END)
 
     def get_form_data(self) -> dict:
-        return {
-            "NAME": self.name_entry.get(),
-            "POSITION": self.position_entry.get(),
-            "CONTACT": self.contact_number_entry.get(),
-            "EMAIL": self.email_entry.get()
-        }
+        return {label: entry.get() for label, entry in self.entry_widgets.items()}
 
     def on_close_attempt(self):
         if messagebox.askokcancel(
