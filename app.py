@@ -59,6 +59,9 @@ class App:
             print(f"Error, {page} page not found")
             return False
 
+        elif page == "HOME":
+            fetched_page.load_logs_to_treeview()
+
         # Start Webcam for QR Scanner
         elif page == "QR":
             fetched_page.update_webcam()

@@ -3,19 +3,24 @@ from tkinter import ttk
 import globals
 from PIL import Image, ImageTk
 
+
 class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        self.parent = parent
         self._create_widgets()
 
     def _create_widgets(self):
         self.container = tk.Frame(self, bg=globals.BACKGROUND_COLOR)
         self.container.pack(expand=True, fill="both")
 
+        # 1. Configure rows and columns directly on self.container
         self.container.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1, uniform="group1")
-        self.columnconfigure(1, weight=1, uniform="group1")
+
+        # Adjust weight ratios as needed (e.g., side_bar fixed/smaller weight, content_area larger weight)
+        self.container.columnconfigure(0, weight=0)
+        self.container.columnconfigure(1, weight=1)
 
         # SIDE BAR FRAME
         self.side_bar = tk.Frame(self.container, bg=globals.PRIMARY_LIGHT)
@@ -48,23 +53,10 @@ class HomePage(tk.Frame):
         self.icon_staff = self._load_icon("assets/icons/Staff.png")
         self.icon_service = self._load_icon("assets/icons/Service_Form.png")
 
-        # 2. Define button parameters (text, page_key, parent, icon)
         buttons_config = [
-            (
-                "Students",
-                "STUDENTS",
-                self.icon_students,
-            ),
-            (
-                "Staff",
-                "STAFF",
-                self.icon_staff
-            ),
-            (
-                "Medical Service Forms",
-                "SERVICE_FORMS",
-                self.icon_service,
-            ),
+            ("Students", "STUDENTS", self.icon_students),
+            ("Staff", "STAFF", self.icon_staff),
+            ("Medical Service Forms", "SERVICE_FORMS", self.icon_service),
         ]
 
         self.sidebar_buttons = {}
@@ -78,15 +70,67 @@ class HomePage(tk.Frame):
                 cursor="hand2",
                 command=lambda p=page_key: self.controller.render_page(p),
             )
-
-            # Use grid instead of pack
             btn.grid(row=row_idx + 2, column=0, sticky="nsew")
             self.sidebar_buttons[page_key] = btn
 
         # CONTENT AREA FRAME
         self.content_area = tk.Frame(self.container, bg=globals.BACKGROUND_COLOR)
-        self.content_area.grid(row=0, column=1, sticky="nsew")
+        self.content_area.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
 
+        for widget in self.content_area.winfo_children():
+            widget.destroy()
+
+        # Vertical centering using empty weight cushion rows
+        self.content_area.grid_rowconfigure(0, weight=1)
+        self.content_area.grid_rowconfigure(1, weight=0)
+        self.content_area.grid_rowconfigure(2, weight=1)
+
+        self.content_area.grid_columnconfigure(0, weight=1)
+        self.content_area.grid_columnconfigure(1, weight=0)
+
+        # 1. Create Treeview Widget with single column
+        columns = ("log_content",)
+        self.tree = ttk.Treeview(
+            self.content_area,
+            columns=columns,
+            show="headings",
+            selectmode="browse",
+            height=20
+        )
+
+        # 2. Configure Single Column Header & Alignment
+        self.tree.heading("log_content", text="Log Entry", anchor="w")
+        self.tree.column("log_content", minwidth=200, stretch=True, anchor="w")
+
+        # 3. Attach Vertical Scrollbar
+        scrollbar = ttk.Scrollbar(
+            self.content_area,
+            orient="vertical",
+            command=self.tree.yview,
+            style="SCROLL.TScrollbar"
+        )
+        self.tree.configure(yscroll=scrollbar.set)
+
+        # 4. Layout
+        self.tree.grid(row=1, column=0, sticky="ew")
+        scrollbar.grid(row=1, column=1, sticky="ns")
+
+    def load_logs_to_treeview(self):
+        log_lines = []
+        try:
+            with open("log.txt", "r", encoding="utf-8") as file:
+                lines = file.readlines()
+                log_lines = lines[-25:]
+        except Exception as e:
+            log_lines = [f"Error reading log file: {e}"]
+
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        # Insert only log_content string
+        for line in reversed(log_lines):
+            clean_line = line.strip()
+            self.tree.insert("", "end", values=(clean_line,))
     @staticmethod
     def _load_icon(filepath, size=(20, 20)):
         img = Image.open(filepath)
