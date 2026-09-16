@@ -30,7 +30,7 @@ class StudentsPage(tk.Frame):
         student_id = self.tree.item(selected[0], "values")[0]
 
         # Will open instantly the window from the separate file
-        StudentDetailWindow(self.controller, self, student_id)
+        StudentDetailWindow(self.controller, self, student_id, True)
 
     def open_create_student_popup(self):
         create_student_popup = CreateStudentProfilePopUp(self.controller, self)
@@ -943,12 +943,13 @@ class CreateStudentProfilePopUp(tk.Toplevel):
         self.destroy()
 
 class StudentDetailWindow(tk.Toplevel):
-    def __init__(self, controller, parent, student_id):
+    def __init__(self, controller, parent, student_id, can_edit):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
         self.student_id = student_id
         self.student_data = {}
+        self.can_edit = can_edit
 
         # Fetch student record from database
         if not self._fetch_student_data():
@@ -980,7 +981,8 @@ class StudentDetailWindow(tk.Toplevel):
 
         # Create UI Widgets & populate
         self._create_widgets()
-        self._load_student_data()
+        if self.can_edit:
+            self._load_student_data()
 
     def _fetch_student_data(self) -> bool:
         query = """
@@ -1082,7 +1084,6 @@ class StudentDetailWindow(tk.Toplevel):
         self.entry_widgets = {}
         num_of_cols = 2
         last_row = 0
-
         for index, (key, label_text) in enumerate(form_entries.items()):
             column = index % num_of_cols
             row = index // num_of_cols
@@ -1106,33 +1107,43 @@ class StudentDetailWindow(tk.Toplevel):
                 )
                 self.student_id_label.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
-            elif key == "date_of_birth":
-                dob_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
-                dob_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+            if self.can_edit:
+                if key == "date_of_birth":
+                    dob_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
+                    dob_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
-                month_names = list(self.month_map.keys())
-                days = [f"{i:02d}" for i in range(1, 32)]
-                years = [str(i) for i in range(2026, 1940, -1)]
+                    month_names = list(self.month_map.keys())
+                    days = [f"{i:02d}" for i in range(1, 32)]
+                    years = [str(i) for i in range(2026, 1940, -1)]
 
-                self.dob_month = tk.StringVar(value="January")
-                self.dob_day = tk.StringVar(value="01")
-                self.dob_year = tk.StringVar(value="2005")
+                    self.dob_month = tk.StringVar(value="January")
+                    self.dob_day = tk.StringVar(value="01")
+                    self.dob_year = tk.StringVar(value="2005")
 
-                ttk.Combobox(dob_frame, textvariable=self.dob_month, values=month_names, state="readonly", width=10,
-                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
-                ttk.Combobox(dob_frame, textvariable=self.dob_day, values=days, state="readonly", width=3,
-                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
-                ttk.Combobox(dob_frame, textvariable=self.dob_year, values=years, state="readonly", width=6,
-                             style="dropdown.TCombobox").pack(side="left")
+                    ttk.Combobox(dob_frame, textvariable=self.dob_month, values=month_names, state="readonly", width=10,
+                                 style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                    ttk.Combobox(dob_frame, textvariable=self.dob_day, values=days, state="readonly", width=3,
+                                 style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
+                    ttk.Combobox(dob_frame, textvariable=self.dob_year, values=years, state="readonly", width=6,
+                                 style="dropdown.TCombobox").pack(side="left")
+
+                else:
+                    self.entry_widgets[key] = ttk.Entry(
+                        form_frame,
+                        style="ENTRY.TEntry"
+                    )
+                    self.entry_widgets[key].grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8,
+                                                 padx=(4, 16))
 
             else:
-                self.entry_widgets[key] = ttk.Entry(
+                tk.Label(
                     form_frame,
-                    style="ENTRY.TEntry"
-                )
-                self.entry_widgets[key].grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8,
-                                             padx=(4, 16))
-
+                    text=f"{self.student_data.get(key)}",
+                    font=("Helvetica", 11, "bold"),
+                    background=globals.BACKGROUND_COLOR,
+                    foreground=globals.ACCENT_COLOR
+                ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8,
+                                                 padx=(4, 16))
         # Separator Line
         sep_row = last_row + 1
         ttk.Separator(form_frame, orient="horizontal").grid(
@@ -1228,13 +1239,14 @@ class StudentDetailWindow(tk.Toplevel):
             cursor="hand2"
         ).grid(row=0, column=0, padx=5)
 
-        ttk.Button(
-            button_frame,
-            text="Save",
-            command=self.save_update,
-            style="BTN.TButton",
-            cursor="hand2"
-        ).grid(row=0, column=1, padx=5)
+        if self.can_edit:
+            ttk.Button(
+                button_frame,
+                text="Save",
+                command=self.save_update,
+                style="BTN.TButton",
+                cursor="hand2"
+            ).grid(row=0, column=1, padx=5)
 
     def _parse_json_field(self, data) -> dict:
         if isinstance(data, dict):
@@ -1399,6 +1411,10 @@ class StudentDetailWindow(tk.Toplevel):
             )
 
     def on_close(self):
+        if not self.can_edit:
+            self.destroy()
+            return
+
         if not self.is_data_changed():
             self.destroy()
             return
