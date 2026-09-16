@@ -22,11 +22,10 @@ class StaffPage(tk.Frame):
         if not selected:
             return
 
-        values = self.tree.item(selected[0], "values")
-        values_dict = dict(zip(self.tree["columns"], values))
+        staff_id = self.tree.item(selected[0], "values")[0]
 
         # Will open instantly the window from the separate file
-        StaffDetailWindow(self.controller, self, values_dict)
+        StaffDetailWindow(self.controller, self, staff_id)
 
     def delete_selected(self):
         rows = self.tree.selection()
@@ -353,11 +352,12 @@ class StaffPage(tk.Frame):
         )
 
 class StaffDetailWindow(tk.Toplevel):
-    def __init__(self, controller, parent, staff_data):
+    def __init__(self, controller, parent, staff_id):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
-        self.staff_data = staff_data
+        self.staff_id = staff_id
+        self.staff_data = {}
 
         # Window Configuration
         self.title("Create a Staff Profile")
@@ -377,7 +377,32 @@ class StaffDetailWindow(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Create UI Widgets
+        self._fetch_staff_data()
         self._create_widgets()
+
+    def _fetch_staff_data(self):
+        query = """
+                    SELECT 
+                        staff_id, name, position, email, contact_number
+                    FROM staff
+                    WHERE staff_id = %s
+                """
+        try:
+            self.controller.cursor.execute(query, (self.staff_id,))
+            record = self.controller.cursor.fetchone()
+
+            if not record:
+                messagebox.showerror("Error", f"No record found for Student ID: {self.staff_id}")
+                return False
+
+            # Map tuple columns to dictionary keys matching database column names
+            columns = [column[0] for column in self.controller.cursor.description]
+            self.staff_data = dict(zip(columns, record))
+            return True
+
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Failed to fetch student data.\n\n{e}")
+            return False
 
     def _create_widgets(self):
         # Base container canvas setup for scrolling
