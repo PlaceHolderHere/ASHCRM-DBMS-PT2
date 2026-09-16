@@ -5,6 +5,7 @@ from pages.students_page import StudentsPage
 from pages.staff_page import StaffPage
 from pages.service_forms_page import ServiceFormPage
 from pages.medical_supplies import MedicalSuppliesPage
+from pages.medical_equipment_page import MedicalEquipmentPage
 
 # Imports
 from tkinter import ttk
@@ -27,7 +28,8 @@ pages = {
     "STUDENTS": StudentsPage,
     "STAFF": StaffPage,
     "SERVICE_FORMS": ServiceFormPage,
-    "MED_SUPPLIES": MedicalSuppliesPage
+    "MED_SUPPLIES": MedicalSuppliesPage,
+    "MED_EQUIP": MedicalEquipmentPage
 }
 
 def create_styled_button(parent, photo_path, text, command, style, size=(16, 16)):
