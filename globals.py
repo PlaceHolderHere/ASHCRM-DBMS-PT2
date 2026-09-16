@@ -30,7 +30,7 @@ pages = {
     "SERVICE_FORMS": ServiceFormPage
 }
 
-def create_styled_button(parent, photo_path, text, command, size=(16, 16)):
+def create_styled_button(parent, photo_path, text, command, style, size=(16, 16)):
     try:
         img = Image.open(photo_path)
         resized_icon = img.resize(size, Image.Resampling.LANCZOS)
@@ -43,7 +43,7 @@ def create_styled_button(parent, photo_path, text, command, size=(16, 16)):
         text=f" {text}",
         image=icon,
         compound="left",
-        style="BTN.TButton",
+        style=style,
         command=command,
         cursor="hand2"
     )
@@ -151,6 +151,35 @@ def init_ttk_styles():
         background=[
             ("active", ACCENT_DARK),  # Color when clicked
             ("hover", ACCENT_DARK)  # Color on mouse hover
+        ],
+        foreground=[
+            ("active", BACKGROUND_COLOR),  # Color when clicked
+            ("hover", BACKGROUND_COLOR)  # Color on mouse hover
+        ],
+    )
+
+    styles.configure(
+        "BTN_RED.TButton",
+        foreground="#dc2626",
+        background=BACKGROUND_COLOR,
+        focusthickness=2,
+        font=("Helvetica", 11, "bold"),
+        padding=(8, 4),
+        bordercolor="#dc2626",  # Primary border color
+        lightcolor="#dc2626",  # Prevents 3D top/left highlights
+        darkcolor="#dc2626",  # Prevents 3D bottom/right shadows
+        borderwidth=2,  # Border thickness
+        relief="solid",
+    )
+    styles.map(
+        "BTN_RED.TButton",
+        background=[
+            ("active", "#dc2626"),
+            ("hover", "#dc2626")
+        ],
+        bordercolor=[
+            ("active", "#dc2626"),
+            ("hover", "#dc2626")
         ],
         foreground=[
             ("active", BACKGROUND_COLOR),  # Color when clicked
