@@ -3,7 +3,8 @@ from tkinter import ttk
 from tkinter import messagebox
 import mysql.connector
 import globals
-
+from pages.students_page import StudentDetailWindow
+from pages.staff_page import StaffDetailWindow
 
 class ServiceFormPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -386,6 +387,28 @@ class ServiceFormDetailWindow(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self._create_widgets()
 
+    def view_student_details(self):
+        student_id = self.service_form_data.get("student_id")
+        if not student_id:
+            messagebox.showinfo("No Student ID", "No Student ID attached to this form.")
+            return
+
+        try:
+            StudentDetailWindow(self.controller, self, student_id, False)
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Could not fetch student details.\n\n{e}")
+
+    def view_staff_details(self):
+        staff_id = self.service_form_data.get("staff_id")
+        if not staff_id:
+            messagebox.showinfo("No Staff ID", "No Staff ID attached to this form.")
+            return
+
+        try:
+            StaffDetailWindow(self.controller, self, staff_id, False)
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Could not fetch staff details.\n\n{e}")
+
     def _create_widgets(self):
         canvas = tk.Canvas(
             self,
@@ -482,6 +505,26 @@ class ServiceFormDetailWindow(tk.Toplevel):
                     background=globals.BACKGROUND_COLOR
                 ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
+            elif field_key == "student_id":
+                student_id = self.service_form_data.get("student_id", "N/A")
+                ttk.Button(
+                    info_frame,
+                    text=f"View Student ({student_id})",
+                    style="BTN.TButton",
+                    command=self.view_student_details,
+                    cursor="hand2"
+                ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+
+            elif field_key == "staff_id":
+                staff_id = self.service_form_data.get("staff_id", "N/A")
+                ttk.Button(
+                    info_frame,
+                    text=f"View Staff ({staff_id})",
+                    style="BTN.TButton",
+                    command=self.view_staff_details,
+                    cursor="hand2"
+                ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+
             elif field_key == "date":
                 date_frame = tk.Frame(info_frame, bg=globals.BACKGROUND_COLOR)
                 date_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
@@ -541,14 +584,16 @@ class ServiceFormDetailWindow(tk.Toplevel):
 
     def is_data_changed(self) -> bool:
         entry_data = self.get_entry_data()
-        for key, value in self.service_form_data.items():
-            if str(value) != str(entry_data.get(key)):
+        for key in ["purpose", "date", "time_start", "time_end"]:
+            if str(self.service_form_data.get(key, "")) != str(entry_data.get(key, "")):
                 return True
         return False
 
     def get_entry_data(self) -> dict:
         output = {key: widget.get() for key, widget in self.entry_widgets.items()}
         output["service_form_id"] = self.service_form_data.get("service_form_id")
+        output["student_id"] = self.service_form_data.get("student_id")
+        output["staff_id"] = self.service_form_data.get("staff_id")
 
         month_num = self.month_map.get(self.apt_month.get(), "01")
         output["date"] = f"{self.apt_year.get()}-{month_num}-{self.apt_day.get()}"
@@ -592,7 +637,6 @@ class ServiceFormDetailWindow(tk.Toplevel):
             self.controller.connection.rollback()
             messagebox.showerror("ERROR! Could not Update Record",
                                  f"An error occurred while trying to update service form ID {form_data.get('service_form_id')}\n\nError Message: {e}")
-
 
 class CreateServiceFormPopUp(tk.Toplevel):
     month_map = {
