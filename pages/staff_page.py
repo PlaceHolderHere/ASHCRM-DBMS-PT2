@@ -352,12 +352,13 @@ class StaffPage(tk.Frame):
         )
 
 class StaffDetailWindow(tk.Toplevel):
-    def __init__(self, controller, parent, staff_id):
+    def __init__(self, controller, parent, staff_id, can_edit):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
         self.staff_id = staff_id
         self.staff_data = {}
+        self.can_edit = can_edit
 
         # Window Configuration
         self.title("Create a Staff Profile")
@@ -520,7 +521,7 @@ class StaffDetailWindow(tk.Toplevel):
                     pady=8,
                     padx=(4, 16)
                 )
-            else:
+            elif self.can_edit:
                 self.entry_widgets[label_text] = ttk.Entry(
                     info_frame,
                     style="ENTRY.TEntry"
@@ -533,18 +534,28 @@ class StaffDetailWindow(tk.Toplevel):
                     pady=8,
                     padx=(4, 16)
                     )
+            else:
+                tk.Label(
+                    info_frame,
+                    text=f"{self.staff_data.get(label_text)}",
+                    font=("Helvetica", 11, "bold"),
+                    background=globals.BACKGROUND_COLOR,
+                    foreground=globals.ACCENT_COLOR
+                ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8,
+                       padx=(4, 16))
 
-        # SAVE BUTTON
-        ttk.Button(
-            container,
-            text="Save",
-            style="BTN_SOLID.TButton",
-            command=self.save_update
-        ).pack(
-            pady=16,
-            side="right",
-            padx=(8, 32)
-        )
+        if self.can_edit:
+            # SAVE BUTTON
+            ttk.Button(
+                container,
+                text="Save",
+                style="BTN_SOLID.TButton",
+                command=self.save_update
+            ).pack(
+                pady=16,
+                side="right",
+                padx=(8, 32)
+            )
 
         # CLOSE BUTTON
         ttk.Button(
@@ -559,6 +570,10 @@ class StaffDetailWindow(tk.Toplevel):
         )
 
     def on_close(self):
+        if not self.can_edit:
+            self.destroy()
+            return
+
         if not self.is_data_changed():
             self.destroy()
             return
