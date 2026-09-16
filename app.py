@@ -3,6 +3,7 @@ from database_connection import create_database_connection, get_env_variables
 from tkinter import messagebox
 import globals
 from datetime import datetime
+from qr_scanner import QRScanner
 
 class App:
     def __init__(self):
@@ -22,6 +23,7 @@ class App:
         self.root.title("ASHCRM")
         self.center_window()
         globals.init_ttk_styles()
+        self.qr_scanner = QRScanner(self.root)
 
         # Full Window Container for all content
         self.content_container = tk.Frame(self.root)
@@ -68,13 +70,7 @@ class App:
             # Close Database Connection
             self.cursor.close()
             self.connection.close()
-
-            # Close QR Scanner Webcam
-            qr_scanner_page = self.loaded_pages.get("QR")
-            if qr_scanner_page.cap is not None:
-                if qr_scanner_page.cap.isOpened():
-                    qr_scanner_page.cap.release()
-
+            self.qr_scanner.stop_camera()
             self.root.destroy()  # close the window
 
     def on_configure(self, event: tk.Event) -> None:

@@ -6,6 +6,8 @@ import csv
 import json
 import mysql.connector
 import globals
+import cv2
+from PIL import Image, ImageTk
 
 class StudentsPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -16,6 +18,7 @@ class StudentsPage(tk.Frame):
         self.keyword = ""
         self._TABLE_NAME = "student"
         self._create_widgets()
+        self.scanned_qr = None
 
         self.tree.bind("<Double-1>", self.open_details_popup)
 
@@ -183,6 +186,19 @@ class StudentsPage(tk.Frame):
             sticky="w",
             pady=(0, 16),
             padx=4
+        )
+
+        scan_qr_btn = ttk.Button(
+            search_frame,
+            text="Scan QR",
+            command=self.open_scanner,
+            style="BTN.TButton",
+            cursor="hand2"
+        )
+        scan_qr_btn.grid(
+            row=0,
+            column=2,
+            padx=(0, 6)
         )
 
         upload_csv_btn = ttk.Button(
@@ -445,6 +461,92 @@ class StudentsPage(tk.Frame):
 
         return output
 
+    def open_scanner(self):
+        scanner = QRScannerPopUp(self.controller, self)
+        self.wait_window(scanner)
+
+class QRScannerPopUp(tk.Toplevel):
+    def __init__(self, controller, parent):
+        super().__init__(controller.root)
+        self.controller = controller
+        self.parent = parent
+        self._webcam_update = None
+
+        # Window Configuration
+        self.title("Scan a QR")
+        self.geometry(f"{int(globals.window_width // 1.5)}x{int(globals.window_height // 1.5)}")
+        self.resizable(False, False)
+
+        # Center relative to parent
+        x, y = controller.get_screen_center(globals.window_width // 2, globals.window_height // 2)
+        self.geometry(f"+{x}+{y}")
+
+        self.transient(controller.root)
+        self.grab_set()
+
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self._create_widgets()
+
+        # Start camera hardware and begin video loop
+        if self.controller.qr_scanner.camera_ready:
+            self.update_video_feed()
+        else:
+            self.status_label.config(text="Error: Could not access webcam.")
+
+    def _create_widgets(self):
+        # Video Display Frame
+        self.video_label = tk.Label(self, bg="black")
+        self.video_label.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Status Label
+        self.status_label = tk.Label(
+            self,
+            text="Point camera at a QR Code...",
+            font=("Helvetica", 11, "bold"),
+            bg=globals.BACKGROUND_COLOR,
+            fg=globals.ACCENT_COLOR
+        )
+        self.status_label.pack(pady=(0, 5))
+
+        # Buttons
+        btn_frame = tk.Frame(self, bg=globals.BACKGROUND_COLOR)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(
+            btn_frame,
+            text="Cancel",
+            command=self.destroy,
+            style="BTN_RED.TButton",
+            cursor="hand2"
+        ).pack()
+
+    def update_video_feed(self):
+        success, frame, qr_data = self.controller.qr_scanner.get_frame_and_qr()
+
+        if success and frame is not None:
+            # Convert OpenCV BGR frame to PIL RGB Image
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(rgb_frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+
+            # Update video label
+            self.video_label.imgtk = imgtk
+            self.video_label.configure(image=imgtk)
+
+            # If a QR code was scanned successfully
+            if qr_data:
+                self.parent.scanned_qr = qr_data
+                StudentDetailWindow(self.controller, self.parent, qr_data)
+                self.close()
+                return
+
+        # Schedule next frame update (~30 FPS)
+        self._webcam_update = self.after(30, self.update_video_feed)
+
+    def close(self):
+        if self._webcam_update is not None:
+            self.after_cancel(self._webcam_update)
+        self.destroy()
 
 class CreateStudentProfilePopUp(tk.Toplevel):
     def __init__(self, controller, parent):

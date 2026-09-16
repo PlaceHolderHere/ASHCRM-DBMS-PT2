@@ -1,48 +1,20 @@
-import threading
-import tkinter as tk
-from tkinter import ttk
 import cv2
-from PIL import Image, ImageTk
 from pyzbar.pyzbar import decode
+import threading
 
-class QrScanner(tk.Frame):
-    def __init__(self, parent, controller):
-        # Initialization
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
+class QRScanner:
+    def __init__(self, controller):
         self.cap = None
-
-        # Variables
         self.is_running = True
-        self.camera_read = False
-        self._webcam_update = None
+        self.camera_ready = False
+        self.controller = controller
 
-        # Components
-        title = ttk.Label(self, text="Please Scan the QR Code")
-        title.pack(pady=(16, 0))
-
-        self.webcam_video_frame = ttk.Label(self)
-        self.webcam_video_frame.pack(pady=8)
-
-        # Frame for decoded output
-        self.info_frame = ttk.Frame(self)
-        self.info_frame.pack(fill="x", padx=20, pady=10)
-
-        ttk.Label(self.info_frame, text="Scanned Result:").pack(anchor="w")
-        self.result_var = tk.StringVar(value="No QR code detected")
-        self.result_label = ttk.Label(self.info_frame, textvariable=self.result_var)
-        self.result_label.pack(anchor="w", pady=2)
-
-        home_button = ttk.Button(self, text="Home", command=self.close_qr_scanner)
-        home_button.pack(anchor="w", padx=8)
-
-        # Connect to Camera in the background (prevents program from freezing)
         threading.Thread(target=self._init_camera, daemon=True).start()
 
     def _init_camera(self):
         cap = cv2.VideoCapture(0)
         if self.is_running:
-            self.after(0, self._camera_ready, cap)
+            self.controller.after(0, self._camera_ready, cap)
         else:
             cap.release()
 
@@ -51,48 +23,32 @@ class QrScanner(tk.Frame):
         if self.cap.isOpened():
             self.camera_ready = True
 
-    def update_webcam(self):
+    def get_frame_and_qr(self):
         if not self.is_running or not self.cap or not self.cap.isOpened() or not self.camera_ready:
-            return
+            return False, None, None
 
-        frame_recorded, frame = self.cap.read()
-        if frame_recorded:
-            qr_data = self.read_qr(frame)
-            if qr_data:
-                self.result_var.set(qr_data)
+        ret, frame = self.cap.read()
+        if not ret:
+            return False, None, None
 
-            # Convert OpenCV BGR frame to RGB for Tkinter display
-            cv2_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(cv2_image)
+        qr_data = None
+        # Decode any barcodes/QR codes present in the frame
+        decoded_objects = decode(frame)
+        for obj in decoded_objects:
+            qr_data = obj.data.decode('utf-8')
 
-            # Resize frame to fit GUI dimensions
-            pil_image = pil_image.resize((640, 400), Image.Resampling.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=pil_image)
-
-            # Keep a reference and update label image
-            self.webcam_video_frame.imgtk = imgtk
-            self.webcam_video_frame.configure(image=imgtk)
-
-        # Update the frame every 30ms~
-        self._webcam_update = self.controller.root.after(30, self.update_webcam)
-
-    @staticmethod
-    def read_qr(frame) -> str:
-        qr_data = ""
-        qr_codes = decode(frame)
-        for qr_code in qr_codes:
-            qr_data = qr_code.data.decode("utf-8")
-
-            # Drawing a bounding box around the QR code
-            pts = qr_code.polygon
+            # Draw bounding box around detected QR code
+            pts = obj.polygon
             if len(pts) == 4:
                 pts = [(pt.x, pt.y) for pt in pts]
                 for i in range(4):
-                    cv2.line(frame, pts[i], pts[(i + 1) % 4], (0, 255, 0), 3)
+                    cv2.line(frame, pts[i], pts[(i + 1) % 4], (0, 255, 0), 2)
+            break
 
-        return qr_data
+        return True, frame, qr_data
 
-    def close_qr_scanner(self):
-        if self._webcam_update is not None:
-            self.controller.root.after_cancel(self._webcam_update)
-        self.controller.render_page("HOME")
+    def stop_camera(self):
+        self.is_running = False
+        if self.cap and self.cap.isOpened():
+            self.cap.release()
+            self.cap = None
