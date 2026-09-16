@@ -56,11 +56,6 @@ class HomePage(tk.Frame):
                 self.icon_students,
             ),
             (
-                "QR Scanner",
-                "QR",
-                self.icon_scanner,
-            ),
-            (
                 "Staff",
                 "STAFF",
                 self.icon_staff
