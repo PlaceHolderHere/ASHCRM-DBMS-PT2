@@ -770,6 +770,10 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         )
 
     def add_staff_record(self):
+        if self.is_form_empty():
+            messagebox.showerror("Form is Empty!", "Error! Form is empty, please fill in the form.")
+            return
+
         data = self.get_form_data()
         query = """
                 INSERT INTO staff (name, position, email, contact_number)
@@ -800,11 +804,18 @@ class CreateStaffProfilePopUp(tk.Toplevel):
         for entry in self.entry_widgets.values():
             entry.delete(0, tk.END)
 
+    def is_form_empty(self) -> bool:
+        for entry in self.entry_widgets.values():
+            if entry.get():
+                return False
+
+        return True
+
     def get_form_data(self) -> dict:
         return {label: entry.get() for label, entry in self.entry_widgets.items()}
 
     def on_close_attempt(self):
-        if messagebox.askokcancel(
+        if self.is_form_empty() or messagebox.askokcancel(
             "Do you wish to close this window?",
             "Are you sure you want to close this window? Any data you have inputted will not be saved"
         ):
