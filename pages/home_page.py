@@ -49,14 +49,15 @@ class HomePage(tk.Frame):
 
         # Buttons and Icons
         self.icon_students = self._load_icon("assets/icons/students.png")
-        self.icon_scanner = self._load_icon("assets/icons/Logo.png")
         self.icon_staff = self._load_icon("assets/icons/Staff.png")
         self.icon_service = self._load_icon("assets/icons/Service_Form.png")
+        self.icon_med_supplies = self._load_icon("assets/icons/Med_Supplies.png")
 
         buttons_config = [
             ("Students", "STUDENTS", self.icon_students),
             ("Staff", "STAFF", self.icon_staff),
             ("Medical Service Forms", "SERVICE_FORMS", self.icon_service),
+            ("Medical Supplies", "MED_SUPPLIES", self.icon_med_supplies)
         ]
 
         self.sidebar_buttons = {}
