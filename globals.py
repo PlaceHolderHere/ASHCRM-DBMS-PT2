@@ -54,6 +54,44 @@ def init_ttk_styles():
     styles = ttk.Style()
     styles.theme_use("clam")  # For custom border and background doverrides
 
+    # CHECK BOXES
+    styles.configure(
+        "checkbox.TCheckbutton",
+        background=BACKGROUND_COLOR,
+        foreground=ACCENT_COLOR,
+        font=("Helvetica", 10),
+        indicatorbackground=BACKGROUND_COLOR,
+        indicatorforeground=ACCENT_DARK,
+        focusthickness=0
+    )
+
+    styles.map(
+        "checkbox.TCheckbutton",
+        background=[("active", BACKGROUND_COLOR)],
+        foreground=[("active", ACCENT_DARK)],
+        indicatorbackground=[("selected", ACCENT_DARK), ("active", BACKGROUND_COLOR)]
+    )
+
+    styles.configure(
+        "dropdown.TCombobox",
+        fieldbackground=BACKGROUND_COLOR,
+        background=ACCENT_DARK,
+        foreground=ACCENT_COLOR,
+        arrowcolor=BACKGROUND_COLOR,
+        bordercolor=ACCENT_COLOR,
+        lightcolor=BACKGROUND_COLOR,
+        darkcolor=BACKGROUND_COLOR,
+        padding=4
+    )
+
+    styles.map(
+        "dropdown.TCombobox",
+        fieldbackground=[("readonly", BACKGROUND_COLOR), ("focus", BACKGROUND_COLOR)],
+        foreground=[("readonly", ACCENT_COLOR)],
+        selectbackground=[("readonly", ACCENT_DARK)],
+        selectforeground=[("readonly", "#FFFFFF")]
+    )
+
     # SCROLL BARS
     styles.configure(
         "SCROLL.TScrollbar",
