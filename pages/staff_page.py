@@ -188,7 +188,8 @@ class StaffPage(tk.Frame):
             search_frame,
             photo_path="Assets/Icons/Create.png",
             text="Create Profile",
-            command=self.open_create_staff_popup
+            command=self.open_create_staff_popup,
+            style="BTN.TButton"
         )
         create_btn.grid(
             row=0,
@@ -247,12 +248,12 @@ class StaffPage(tk.Frame):
             column=3
         )
 
-        delete_btn = ttk.Button(
+        delete_btn = globals.create_styled_button(
             search_frame,
+            photo_path="Assets/Icons/Delete.png",
             text="Delete Selected",
             command=self.delete_selected,
-            style="BTN.TButton",
-            cursor="hand2"
+            style="BTN_RED.TButton"
         )
         delete_btn.grid(
             row=1,
@@ -818,7 +819,7 @@ class CreateStaffProfilePopUp(tk.Toplevel):
             button_frame,
             text="Clear",
             command=self.clear_fields,
-            style="BTN.TButton",
+            style="BTN_RED.TButton",
             cursor="hand2"
         ).grid(
             row=0,
@@ -832,7 +833,6 @@ class CreateStaffProfilePopUp(tk.Toplevel):
                 INSERT INTO staff (name, position, email, contact_number)
                 VALUES (%(NAME)s, %(POSITION)s, %(EMAIL)s, %(CONTACT)s);
                 """
-
         try:
             self.controller.cursor.execute(
                 query,
