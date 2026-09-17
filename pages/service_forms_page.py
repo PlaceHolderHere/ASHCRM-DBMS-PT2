@@ -5,6 +5,7 @@ import mysql.connector
 import globals
 from pages.students_page import StudentDetailWindow
 from pages.staff_page import StaffDetailWindow
+from pages.medical_equipment_page import EquipmentDetailWindow
 
 class ServiceFormPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -492,20 +493,31 @@ class ServiceFormDetailWindow(tk.Toplevel):
         except mysql.connector.Error as e:
             messagebox.showerror("Database Error", f"Could not fetch student details.\n\n{e}")
 
-    def view_staff_details(self):
-        """Opens Staff Detail popup window for the attached staff ID."""
-        staff_id = self.service_form_data.get("staff_id")
-        if not staff_id:
-            messagebox.showinfo("No Staff ID", "No Staff ID attached to this form.")
+    def view_staff_details(self, staff_id=None):
+        """Opens Staff Detail popup window for a specified or primary staff ID."""
+        target_id = staff_id if staff_id else self.service_form_data.get("staff_id")
+        if not target_id:
+            messagebox.showinfo("No Staff ID", "No Staff ID attached.")
             return
 
         try:
-            StaffDetailWindow(self.controller, self, staff_id, False)
+            StaffDetailWindow(self.controller, self, target_id, False)
         except mysql.connector.Error as e:
             messagebox.showerror("Database Error", f"Could not fetch staff details.\n\n{e}")
 
+    def view_equipment_details(self, equipment_id):
+        """Opens Equipment Detail popup window for a specified equipment ID."""
+        if not equipment_id:
+            messagebox.showinfo("No Equipment ID", "No Equipment ID specified.")
+            return
+
+        try:
+            EquipmentDetailWindow(self.controller, self, equipment_id, False)
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Could not fetch equipment details.\n\n{e}")
+
     def _create_widgets(self):
-        """Builds scrollable container, labels, input fields, and action buttons."""
+        """Builds scrollable container, labels, input fields, dynamic action buttons, and supplies table."""
         # Scrollable canvas setup
         canvas = tk.Canvas(
             self,
@@ -527,6 +539,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
         container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
         canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
 
+        # Binds to handle scrolling region and full-width resizing
         container.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
@@ -535,6 +548,30 @@ class ServiceFormDetailWindow(tk.Toplevel):
             "<Configure>",
             lambda e: canvas.itemconfig(canvas_window, width=e.width)
         )
+
+        def _on_mousewheel(event):
+            # Windows/macOS event.delta vs Linux event.num
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _bind_mousewheel(event):
+            # Windows and macOS
+            canvas.bind_all("<MouseWheel>", _on_mousewheel)
+            # Linux (scroll up / scroll down)
+            canvas.bind_all("<Button-4>", _on_mousewheel)
+            canvas.bind_all("<Button-5>", _on_mousewheel)
+
+        def _unbind_mousewheel(event):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        self.bind("<Enter>", _bind_mousewheel)
+        self.bind("<Leave>", _unbind_mousewheel)
 
         # Header Title Label
         tk.Label(
@@ -670,6 +707,109 @@ class ServiceFormDetailWindow(tk.Toplevel):
                 entry.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
                 self.entry_widgets[field_key] = entry
 
+        # --- SECTION: INVOLVED STAFF BUTTONS ---
+        if self.staff_ids:
+            tk.Label(
+                container,
+                text="INVOLVED STAFF",
+                font=("Helvetica", 12, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).pack(anchor="w", padx=20, pady=(15, 5))
+
+            staff_btn_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR, padx=20)
+            staff_btn_frame.pack(fill="x")
+
+            for item in self.staff_ids:
+                s_id = item[0] if isinstance(item, (tuple, list)) else item.get("staff_id")
+                ttk.Button(
+                    staff_btn_frame,
+                    text=f"View Staff ({s_id})",
+                    style="BTN.TButton",
+                    command=lambda sid=s_id: self.view_staff_details(sid),
+                    cursor="hand2"
+                ).pack(side="left", padx=(0, 8), pady=4)
+
+        # --- SECTION: BORROWED EQUIPMENT BUTTONS ---
+        if self.equipment_ids:
+            tk.Label(
+                container,
+                text="BORROWED EQUIPMENT",
+                font=("Helvetica", 12, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).pack(anchor="w", padx=20, pady=(15, 5))
+
+            equipment_btn_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR, padx=20)
+            equipment_btn_frame.pack(fill="x")
+
+            for item in self.equipment_ids:
+                e_id = item[0] if isinstance(item, (tuple, list)) else item.get("equipment_id")
+                ttk.Button(
+                    equipment_btn_frame,
+                    text=f"View Equipment ({e_id})",
+                    style="BTN.TButton",
+                    command=lambda eq_id=e_id: self.view_equipment_details(eq_id),
+                    cursor="hand2"
+                ).pack(side="left", padx=(0, 8), pady=4)
+
+        # --- SECTION: MEDICAL SUPPLIES USED (2-COLUMN TABLE) ---
+        if self.medical_supplies:
+            tk.Label(
+                container,
+                text="MEDICAL SUPPLIES USED",
+                font=("Helvetica", 12, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR
+            ).pack(anchor="w", padx=20, pady=(15, 5))
+
+            supplies_frame = tk.Frame(container, bg=globals.BACKGROUND_COLOR, padx=20)
+            supplies_frame.pack(fill="x", pady=5)
+
+            # Table Column Headers
+            tk.Label(
+                supplies_frame,
+                text="Supply Name",
+                font=("Helvetica", 10, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR,
+                anchor="w",
+                width=30
+            ).grid(row=0, column=0, sticky="w", pady=4)
+
+            tk.Label(
+                supplies_frame,
+                text="Quantity",
+                font=("Helvetica", 10, "bold"),
+                foreground=globals.ACCENT_COLOR,
+                background=globals.BACKGROUND_COLOR,
+                anchor="w",
+                width=15
+            ).grid(row=0, column=1, sticky="w", pady=4)
+
+            # Render each supply item in 2 columns: [0] Name, [1] Quantity
+            for idx, item in enumerate(self.medical_supplies, start=1):
+                supply_name = item[0] if isinstance(item, (tuple, list)) else item.get("name")
+                quantity = item[1] if isinstance(item, (tuple, list)) else item.get("quantity")
+
+                tk.Label(
+                    supplies_frame,
+                    text=str(supply_name),
+                    font=("Helvetica", 10),
+                    background=globals.BACKGROUND_COLOR,
+                    anchor="w",
+                    width=30
+                ).grid(row=idx, column=0, sticky="w", pady=2)
+
+                tk.Label(
+                    supplies_frame,
+                    text=str(quantity),
+                    font=("Helvetica", 10),
+                    background=globals.BACKGROUND_COLOR,
+                    anchor="w",
+                    width=15
+                ).grid(row=idx, column=1, sticky="w", pady=2)
+
         # Save and Cancel action buttons
         ttk.Button(container, text="Save", style="BTN_SOLID.TButton", command=self.save_update).pack(
             pady=16, side="right", padx=(8, 32)
@@ -746,7 +886,6 @@ class ServiceFormDetailWindow(tk.Toplevel):
             self.controller.connection.rollback()
             messagebox.showerror("ERROR! Could not Update Record",
                                  f"An error occurred while trying to update service form ID {form_data.get('service_form_id')}\n\nError Message: {e}")
-
 class CreateServiceFormPopUp(tk.Toplevel):
     month_map = {
         "January": "01",
