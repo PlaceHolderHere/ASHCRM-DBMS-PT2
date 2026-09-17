@@ -54,6 +54,7 @@ class HomePage(tk.Frame):
         self.icon_med_supplies = self._load_icon("assets/icons/Med_Supplies.png")
         self.icon_med_equip = self._load_icon("Assets/icons/Logo.png")
         self.icon_med_cert = self._load_icon("Assets/icons/Med_Certs.png")
+        self.icon_clinic_visit = self._load_icon("Assets/icons/Clinic_Visits.png")
 
         buttons_config = [
             ("Students", "STUDENTS", self.icon_students),
@@ -61,7 +62,8 @@ class HomePage(tk.Frame):
             ("Medical Service Forms", "SERVICE_FORMS", self.icon_service),
             ("Medical Supplies", "MED_SUPPLIES", self.icon_med_supplies),
             ("Medical Equipment", "MED_EQUIP", self.icon_med_equip),
-            ("Medical Certificates", "MED_CERTS", self.icon_med_cert)
+            ("Medical Certificates", "MED_CERTS", self.icon_med_cert),
+            ("Clinic Visits", "VISITS", self.icon_clinic_visit)
         ]
 
         self.sidebar_buttons = {}
