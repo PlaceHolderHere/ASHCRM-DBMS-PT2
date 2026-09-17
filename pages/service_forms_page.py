@@ -373,6 +373,9 @@ class ServiceFormDetailWindow(tk.Toplevel):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
+        self.staff_ids = []
+        self.equipment_ids = []
+        self.medical_supplies = []
 
         # Handle whether an ID string/int or complete record dictionary was passed
         if isinstance(service_form_id_or_data, dict):
@@ -418,7 +421,43 @@ class ServiceFormDetailWindow(tk.Toplevel):
             FROM medical_service_form
             WHERE service_form_id = %s
         """
+
+        staff_ids_query = """
+            SELECT staff.staff_id FROM medical_service_form AS form
+                INNER JOIN involved_staff_medical_service_form as staff
+                ON form.service_form_id = staff.service_form_id
+                WHERE form.service_form_id = %s;
+        """
+
+        equipment_query = """
+            SELECT item.equipment_id FROM medical_service_form AS form
+                INNER JOIN borrowed_items as item
+                ON form.service_form_id = item.borrow_log_id
+                WHERE form.service_form_id = %s;
+        """
+
+        supplies_query = """
+            SELECT med_sup.name, supplies.quantity FROM medical_service_form AS form
+                INNER JOIN medical_supplies_used_service_form as supplies
+                ON form.service_form_id = supplies.service_form_id
+                INNER JOIN medical_supplies AS med_sup
+                ON supplies.medical_item_id = med_sup.medical_item_id
+                WHERE form.service_form_id = %s;
+        """
+
         try:
+            # Involved Staff Ids
+            self.controller.cursor.execute(staff_ids_query, (self.service_form_id,))
+            self.staff_ids = self.controller.cursor.fetchall()
+
+            # Medical Equipment Ids
+            self.controller.cursor.execute(equipment_query, (self.service_form_id,))
+            self.equipment_ids = self.controller.cursor.fetchall()
+
+            # Medical Supplies
+            self.controller.cursor.execute(supplies_query, (self.service_form_id,))
+            self.medical_supplies = self.controller.cursor.fetchall()
+
             self.controller.cursor.execute(query, (self.service_form_id,))
             result = self.controller.cursor.fetchone()
 
