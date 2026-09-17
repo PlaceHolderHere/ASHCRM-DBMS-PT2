@@ -24,10 +24,10 @@ class MedicalSuppliesPage(tk.Frame):
             return
 
         values = self.tree.item(selected[0], "values")
-        values_dict = dict(zip(self.tree["columns"], values))
+        item_id = values[0]
 
-        # Will open instantly the window from the separate file
-        MedicalSupplyDetailWindow(self.controller, self, values_dict)
+        # Opens window passing item_id and can_edit flag
+        MedicalSupplyDetailWindow(self.controller, self, item_id, can_edit=True)
 
     def delete_selected(self):
         rows = self.tree.selection()
@@ -338,11 +338,19 @@ class MedicalSuppliesPage(tk.Frame):
 
 
 class MedicalSupplyDetailWindow(tk.Toplevel):
-    def __init__(self, controller, parent, item_data):
+    def __init__(self, controller, parent, item_id, can_edit=True):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
-        self.item_data = item_data
+        self.item_id = item_id
+        self.can_edit = can_edit
+        self.item_data = {}
+
+        # Fetch data independently from the database
+        self.load_data()
+
+        if not self.item_data:
+            return
 
         # Window Configuration
         self.title("Medical Supply Details")
@@ -358,6 +366,28 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self._create_widgets()
+
+    def load_data(self):
+        query = """
+            SELECT medical_item_id, name, quantity
+            FROM medical_supplies
+            WHERE medical_item_id = %s
+        """
+        try:
+            self.controller.cursor.execute(query, (self.item_id,))
+            row = self.controller.cursor.fetchone()
+            if row:
+                self.item_data = {
+                    "medical_item_id": row[0],
+                    "name": row[1],
+                    "quantity": row[2]
+                }
+            else:
+                messagebox.showerror("Error", f"Could not find record for Item ID: {self.item_id}")
+                self.destroy()
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Failed to fetch supply details.\n\n{e}")
+            self.destroy()
 
     def _create_widgets(self):
         canvas = tk.Canvas(
@@ -417,9 +447,7 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             font=("Arial", 20, "bold"),
             foreground=globals.ACCENT_COLOR,
             background=globals.BACKGROUND_COLOR
-        ).pack(
-            pady=(15, 5)
-        )
+        ).pack(pady=(15, 5))
 
         # DETAILS FRAME
         info_frame = tk.Frame(
@@ -428,14 +456,11 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             pady=10,
             bg=globals.BACKGROUND_COLOR
         )
-
-        info_frame.pack(
-            fill="both",
-            expand=True
-        )
+        info_frame.pack(fill="both", expand=True)
 
         self.entry_widgets = {}
         num_of_cols = 2
+
         for index, (label_text, value_text) in enumerate(self.item_data.items()):
             column = index % num_of_cols
             row = index // num_of_cols
@@ -454,8 +479,8 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
                 pady=8
             )
 
-            # DATA / READ-ONLY ID
-            if label_text == "medical_item_id":
+            # DATA DISPLAY / READ-ONLY MODE
+            if label_text == "medical_item_id" or not self.can_edit:
                 tk.Label(
                     info_frame,
                     text=value_text,
@@ -469,45 +494,45 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
                     padx=(4, 16)
                 )
             else:
-                self.entry_widgets[label_text] = ttk.Entry(
+                entry = ttk.Entry(
                     info_frame,
                     style="ENTRY.TEntry"
                 )
-                self.entry_widgets[label_text].insert(0, value_text)
-                self.entry_widgets[label_text].grid(
+                entry.insert(0, str(value_text))
+                entry.grid(
                     row=row,
                     column=(column * num_of_cols) + 1,
                     sticky="w",
                     pady=8,
                     padx=(4, 16)
                 )
+                self.entry_widgets[label_text] = entry
 
-        # SAVE BUTTON
-        ttk.Button(
-            container,
-            text="Save",
-            style="BTN_SOLID.TButton",
-            command=self.save_update
-        ).pack(
-            pady=16,
-            side="right",
-            padx=(8, 32)
-        )
+        # ACTION BUTTONS
+        if self.can_edit:
+            ttk.Button(
+                container,
+                text="Save",
+                style="BTN_SOLID.TButton",
+                command=self.save_update
+            ).pack(pady=16, side="right", padx=(8, 32))
 
-        # CANCEL BUTTON
-        ttk.Button(
-            container,
-            text="Cancel",
-            style="BTN.TButton",
-            command=self.on_close
-        ).pack(
-            pady=16,
-            side="right",
-            padx=8
-        )
+            ttk.Button(
+                container,
+                text="Cancel",
+                style="BTN.TButton",
+                command=self.on_close
+            ).pack(pady=16, side="right", padx=8)
+        else:
+            ttk.Button(
+                container,
+                text="Close",
+                style="BTN.TButton",
+                command=self.destroy
+            ).pack(pady=16, side="right", padx=(8, 32))
 
     def on_close(self):
-        if not self.is_data_changed():
+        if not self.can_edit or not self.is_data_changed():
             self.destroy()
             return
 
@@ -516,6 +541,8 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             self.destroy()
 
     def is_data_changed(self) -> bool:
+        if not self.can_edit:
+            return False
         entry_data = self.get_entry_data()
         for key, value in self.item_data.items():
             if str(value) != str(entry_data.get(key)):
@@ -528,6 +555,9 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
         return output
 
     def save_update(self):
+        if not self.can_edit:
+            return
+
         if not self.is_data_changed():
             self.destroy()
             return
@@ -537,7 +567,6 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             messagebox.showerror("ERROR! Invalid Item ID", "Error! Invalid Medical Item ID.")
             return
 
-        # Validate numeric quantity
         try:
             new_quantity = int(form_data.get("quantity"))
             old_quantity = int(self.item_data.get("quantity", 0))
@@ -545,7 +574,6 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             messagebox.showerror("Invalid Input", "Quantity must be a valid integer.")
             return
 
-        # Calculate difference in quantity
         diff = new_quantity - old_quantity
         if diff > 0:
             qty_log_str = f"increased by {diff} ({old_quantity} -> {new_quantity})"
@@ -566,7 +594,6 @@ class MedicalSupplyDetailWindow(tk.Toplevel):
             self.controller.cursor.execute(query, form_data)
             self.controller.connection.commit()
 
-            # Detailed logging of the quantity change
             log_msg = f"Updated item '{form_data.get('name')}' (ID: {form_data.get('medical_item_id')}). Quantity {qty_log_str}."
             self.controller.add_log(log_msg)
 
