@@ -24,10 +24,10 @@ class MedicalEquipmentPage(tk.Frame):
             return
 
         values = self.tree.item(selected[0], "values")
-        values_dict = dict(zip(self.tree["columns"], values))
+        equipment_id = values[0]
 
-        # Will open instantly the window from the separate file
-        EquipmentDetailWindow(self.controller, self, values_dict)
+        # Will open the details window passing equipment_id and can_edit flag
+        EquipmentDetailWindow(self.controller, self, equipment_id, can_edit=True)
 
     def delete_selected(self):
         rows = self.tree.selection()
@@ -332,11 +332,19 @@ class MedicalEquipmentPage(tk.Frame):
 
 
 class EquipmentDetailWindow(tk.Toplevel):
-    def __init__(self, controller, parent, equipment_data):
+    def __init__(self, controller, parent, equipment_id, can_edit=True):
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
-        self.equipment_data = equipment_data
+        self.equipment_id = equipment_id
+        self.can_edit = can_edit
+        self.equipment_data = {}
+
+        # Fetch data independently from database
+        self.load_data()
+
+        if not self.equipment_data:
+            return
 
         # Window Configuration
         self.title("Medical Equipment Details")
@@ -352,6 +360,27 @@ class EquipmentDetailWindow(tk.Toplevel):
 
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self._create_widgets()
+
+    def load_data(self):
+        query = """
+            SELECT equipment_id, type
+            FROM medical_equipment
+            WHERE equipment_id = %s
+        """
+        try:
+            self.controller.cursor.execute(query, (self.equipment_id,))
+            row = self.controller.cursor.fetchone()
+            if row:
+                self.equipment_data = {
+                    "equipment_id": row[0],
+                    "type": row[1]
+                }
+            else:
+                messagebox.showerror("Error", f"Could not find record for Equipment ID: {self.equipment_id}")
+                self.destroy()
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Failed to fetch equipment details.\n\n{e}")
+            self.destroy()
 
     def _create_widgets(self):
         canvas = tk.Canvas(
@@ -448,8 +477,8 @@ class EquipmentDetailWindow(tk.Toplevel):
                 pady=8
             )
 
-            # DATA / READ-ONLY ID
-            if label_text == "equipment_id":
+            # DATA / READ-ONLY ID OR NON-EDITABLE MODE
+            if label_text == "equipment_id" or not self.can_edit:
                 tk.Label(
                     info_frame,
                     text=value_text,
@@ -463,45 +492,57 @@ class EquipmentDetailWindow(tk.Toplevel):
                     padx=(4, 16)
                 )
             else:
-                self.entry_widgets[label_text] = ttk.Entry(
+                entry = ttk.Entry(
                     info_frame,
                     style="ENTRY.TEntry"
                 )
-                self.entry_widgets[label_text].insert(0, value_text)
-                self.entry_widgets[label_text].grid(
+                entry.insert(0, str(value_text))
+                entry.grid(
                     row=row,
                     column=(column * num_of_cols) + 1,
                     sticky="w",
                     pady=8,
                     padx=(4, 16)
                 )
+                self.entry_widgets[label_text] = entry
 
-        # SAVE BUTTON
-        ttk.Button(
-            container,
-            text="Save",
-            style="BTN_SOLID.TButton",
-            command=self.save_update
-        ).pack(
-            pady=16,
-            side="right",
-            padx=(8, 32)
-        )
+        # ACTION BUTTONS
+        if self.can_edit:
+            ttk.Button(
+                container,
+                text="Save",
+                style="BTN_SOLID.TButton",
+                command=self.save_update
+            ).pack(
+                pady=16,
+                side="right",
+                padx=(8, 32)
+            )
 
-        # CANCEL BUTTON
-        ttk.Button(
-            container,
-            text="Cancel",
-            style="BTN.TButton",
-            command=self.on_close
-        ).pack(
-            pady=16,
-            side="right",
-            padx=8
-        )
+            ttk.Button(
+                container,
+                text="Cancel",
+                style="BTN.TButton",
+                command=self.on_close
+            ).pack(
+                pady=16,
+                side="right",
+                padx=8
+            )
+        else:
+            ttk.Button(
+                container,
+                text="Close",
+                style="BTN.TButton",
+                command=self.destroy
+            ).pack(
+                pady=16,
+                side="right",
+                padx=(8, 32)
+            )
 
     def on_close(self):
-        if not self.is_data_changed():
+        if not self.can_edit or not self.is_data_changed():
             self.destroy()
             return
 
@@ -510,6 +551,8 @@ class EquipmentDetailWindow(tk.Toplevel):
             self.destroy()
 
     def is_data_changed(self) -> bool:
+        if not self.can_edit:
+            return False
         entry_data = self.get_entry_data()
         for key, value in self.equipment_data.items():
             if str(value) != str(entry_data.get(key)):
@@ -522,6 +565,9 @@ class EquipmentDetailWindow(tk.Toplevel):
         return output
 
     def save_update(self):
+        if not self.can_edit:
+            return
+
         if not self.is_data_changed():
             self.destroy()
             return
