@@ -360,6 +360,7 @@ class ServiceFormPage(tk.Frame):
 
 
 class ServiceFormDetailWindow(tk.Toplevel):
+    # Mapping dictionaries for converting between month names and numeric representations
     month_map = {
         "January": "01", "February": "02", "March": "03", "April": "04",
         "May": "05", "June": "06", "July": "07", "August": "08",
@@ -367,13 +368,24 @@ class ServiceFormDetailWindow(tk.Toplevel):
     }
     month_map_rev = {v: k for k, v in month_map.items()}
 
-    def __init__(self, controller, parent, service_form_data):
+    def __init__(self, controller, parent, service_form_id_or_data):
+        # Initialize Toplevel window connected to parent controller
         super().__init__(controller.root)
         self.controller = controller
         self.parent = parent
-        self.service_form_data = service_form_data
 
-        # Window Configuration
+        # Handle whether an ID string/int or complete record dictionary was passed
+        if isinstance(service_form_id_or_data, dict):
+            self.service_form_data = service_form_id_or_data
+            self.service_form_id = service_form_id_or_data.get("service_form_id")
+        else:
+            self.service_form_id = service_form_id_or_data
+            self.service_form_data = {}
+
+        # Fetch the latest service form details directly from MySQL database
+        self.fetch_data()
+
+        # Window configuration and screen centering setup
         self.title("Medical Service Form Details")
         self.geometry(f"{globals.window_width // 2}x{int(globals.window_height * 0.7)}")
         self.resizable(False, False)
@@ -381,13 +393,56 @@ class ServiceFormDetailWindow(tk.Toplevel):
         x, y = controller.get_screen_center(globals.window_width // 2, int(globals.window_height * 0.7))
         self.geometry(f"+{x}+{y}")
 
+        # Keep window modal on top of parent
         self.transient(controller.root)
         self.grab_set()
 
+        # Intercept close protocol and construct UI widgets
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self._create_widgets()
 
+    def fetch_data(self):
+        """Queries database for service form record by ID and updates service_form_data dictionary."""
+        if not self.service_form_id:
+            return
+
+        query = """
+            SELECT 
+                service_form_id,
+                student_id,
+                staff_id,
+                date,
+                time_start,
+                time_end,
+                purpose
+            FROM medical_service_form
+            WHERE service_form_id = %s
+        """
+        try:
+            self.controller.cursor.execute(query, (self.service_form_id,))
+            result = self.controller.cursor.fetchone()
+
+            if result:
+                # Store mapped result whether cursor returned dict or tuple/list
+                if isinstance(result, dict):
+                    self.service_form_data.update(result)
+                else:
+                    self.service_form_data.update({
+                        "service_form_id": result[0],
+                        "student_id": result[1],
+                        "staff_id": result[2],
+                        "date": result[3],
+                        "time_start": result[4],
+                        "time_end": result[5],
+                        "purpose": result[6]
+                    })
+            else:
+                messagebox.showerror("Error", f"Service Form ID {self.service_form_id} not found.")
+        except mysql.connector.Error as e:
+            messagebox.showerror("Database Error", f"Could not fetch service form details.\n\n{e}")
+
     def view_student_details(self):
+        """Opens Student Detail popup window for the attached student ID."""
         student_id = self.service_form_data.get("student_id")
         if not student_id:
             messagebox.showinfo("No Student ID", "No Student ID attached to this form.")
@@ -399,6 +454,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
             messagebox.showerror("Database Error", f"Could not fetch student details.\n\n{e}")
 
     def view_staff_details(self):
+        """Opens Staff Detail popup window for the attached staff ID."""
         staff_id = self.service_form_data.get("staff_id")
         if not staff_id:
             messagebox.showinfo("No Staff ID", "No Staff ID attached to this form.")
@@ -410,6 +466,8 @@ class ServiceFormDetailWindow(tk.Toplevel):
             messagebox.showerror("Database Error", f"Could not fetch staff details.\n\n{e}")
 
     def _create_widgets(self):
+        """Builds scrollable container, labels, input fields, and action buttons."""
+        # Scrollable canvas setup
         canvas = tk.Canvas(
             self,
             bg=globals.BACKGROUND_COLOR,
@@ -439,7 +497,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
             lambda e: canvas.itemconfig(canvas_window, width=e.width)
         )
 
-        # TITLE
+        # Header Title Label
         tk.Label(
             container,
             text="SERVICE FORM DETAILS",
@@ -453,7 +511,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
 
         self.entry_widgets = {}
 
-        # Parse date if available (YYYY-MM-DD)
+        # Parse date components (YYYY-MM-DD) for initial dropdown state
         raw_date = str(self.service_form_data.get("date", ""))
         date_parts = raw_date.split("-") if "-" in raw_date else ["2026", "01", "01"]
         init_year = date_parts[0] if len(date_parts) > 0 else "2026"
@@ -461,7 +519,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
         init_day = date_parts[2] if len(date_parts) > 2 else "01"
         init_month_name = self.month_map_rev.get(init_month_num, "January")
 
-        # Parse time_start & time_end (HH:MM:SS)
+        # Parse time components (HH:MM:SS) for initial dropdown state
         raw_start = str(self.service_form_data.get("time_start", ""))
         start_parts = raw_start.split(":") if ":" in raw_start else ["08", "00"]
 
@@ -485,6 +543,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
         minutes = [f"{i:02d}" for i in range(0, 60, 5)]
 
         num_of_cols = 2
+        # Construct form grid fields dynamically
         for index, (field_key, label_text) in enumerate(fields):
             column = index % num_of_cols
             row = index // num_of_cols
@@ -497,6 +556,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
                 background=globals.BACKGROUND_COLOR
             ).grid(row=row, column=column * num_of_cols, sticky="w", pady=8)
 
+            # Display read-only Service Form ID
             if field_key == "service_form_id":
                 tk.Label(
                     info_frame,
@@ -505,6 +565,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
                     background=globals.BACKGROUND_COLOR
                 ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
+            # Display Student ID view button
             elif field_key == "student_id":
                 student_id = self.service_form_data.get("student_id", "N/A")
                 ttk.Button(
@@ -515,6 +576,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
                     cursor="hand2"
                 ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
+            # Display Staff ID view button
             elif field_key == "staff_id":
                 staff_id = self.service_form_data.get("staff_id", "N/A")
                 ttk.Button(
@@ -525,6 +587,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
                     cursor="hand2"
                 ).grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
+            # Render Date selection via dropdown comboboxes
             elif field_key == "date":
                 date_frame = tk.Frame(info_frame, bg=globals.BACKGROUND_COLOR)
                 date_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
@@ -540,6 +603,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
                 ttk.Combobox(date_frame, textvariable=self.apt_year, values=years, state="readonly", width=6,
                              style="dropdown.TCombobox").pack(side="left")
 
+            # Render Time selection via dropdown comboboxes
             elif field_key in ["time_start", "time_end"]:
                 time_frame = tk.Frame(info_frame, bg=globals.BACKGROUND_COLOR)
                 time_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
@@ -560,20 +624,23 @@ class ServiceFormDetailWindow(tk.Toplevel):
                 ttk.Combobox(time_frame, textvariable=m_var, values=minutes, state="readonly", width=4,
                              style="dropdown.TCombobox").pack(side="left")
 
+            # Render text entry for editable attributes (e.g., purpose)
             else:
                 entry = ttk.Entry(info_frame, style="ENTRY.TEntry")
                 entry.insert(0, str(self.service_form_data.get(field_key, "")))
                 entry.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
                 self.entry_widgets[field_key] = entry
 
-        # BUTTONS
-        ttk.Button(container, text="Save", style="BTN_SOLID.TButton", command=self.save_update).pack(pady=16,
-                                                                                                     side="right",
-                                                                                                     padx=(8, 32))
-        ttk.Button(container, text="Cancel", style="BTN.TButton", command=self.on_close).pack(pady=16, side="right",
-                                                                                              padx=8)
+        # Save and Cancel action buttons
+        ttk.Button(container, text="Save", style="BTN_SOLID.TButton", command=self.save_update).pack(
+            pady=16, side="right", padx=(8, 32)
+        )
+        ttk.Button(container, text="Cancel", style="BTN.TButton", command=self.on_close).pack(
+            pady=16, side="right", padx=8
+        )
 
     def on_close(self):
+        """Prompts for confirmation if unsaved changes exist before closing dialog."""
         if not self.is_data_changed():
             self.destroy()
             return
@@ -583,6 +650,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
             self.destroy()
 
     def is_data_changed(self) -> bool:
+        """Checks if current UI field state differs from original loaded data."""
         entry_data = self.get_entry_data()
         for key in ["purpose", "date", "time_start", "time_end"]:
             if str(self.service_form_data.get(key, "")) != str(entry_data.get(key, "")):
@@ -590,6 +658,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
         return False
 
     def get_entry_data(self) -> dict:
+        """Gathers values from UI elements into a structured data dictionary."""
         output = {key: widget.get() for key, widget in self.entry_widgets.items()}
         output["service_form_id"] = self.service_form_data.get("service_form_id")
         output["student_id"] = self.service_form_data.get("student_id")
@@ -602,6 +671,7 @@ class ServiceFormDetailWindow(tk.Toplevel):
         return output
 
     def save_update(self):
+        """Updates modified record details in MySQL database table."""
         if not self.is_data_changed():
             self.destroy()
             return
