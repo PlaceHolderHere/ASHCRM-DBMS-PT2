@@ -69,12 +69,11 @@ class App:
         return True
 
     def close_app(self):
-        if messagebox.askokcancel("Quit", "Do you want to save your progress and exit?"):
-            # Close Database Connection
-            self.cursor.close()
-            self.connection.close()
-            self.qr_scanner.stop_camera()
-            self.root.destroy()  # close the window
+        # Close Database Connection
+        self.cursor.close()
+        self.connection.close()
+        self.qr_scanner.stop_camera()
+        self.root.destroy()  # close the window
 
     def on_configure(self, event: tk.Event) -> None:
         if event.widget != self.root:
