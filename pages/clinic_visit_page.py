@@ -923,7 +923,6 @@ class ClinicVisitDetailWindow(tk.Toplevel):
         query = """
             UPDATE clinic_visit
             SET
-                student_id = %(student_id)s,
                 time_in = %(time_in)s,
                 time_out = %(time_out)s,
                 date = %(date)s,
