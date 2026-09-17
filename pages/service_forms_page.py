@@ -54,8 +54,59 @@ class ServiceFormPage(tk.Frame):
             selected_ids.append((row[0],))
 
         query = f"DELETE FROM {self._TABLE_NAME} WHERE service_form_id = %s;"
+
+        items_query = """
+            SELECT item.items_id FROM medical_service_form AS form
+                INNER JOIN borrowed_items AS item
+                ON form.service_form_id = item.borrow_log_id
+                WHERE form.service_form_id = %s;
+        """
+
+        delete_item_query = """
+            DELETE FROM borrowed_items WHERE items_id = %s;
+        """
+
+        supplies_query = """
+            SELECT supplies.service_supplies_id FROM medical_service_form AS form
+                INNER JOIN medical_supplies_used_service_form AS supplies
+                ON form.service_form_id = supplies.service_form_id
+                WHERE form.service_form_id = %s;
+        """
+
+        delete_supplies_query = """
+            DELETE FROM medical_supplies_used_service_form WHERE service_supplies_id = %s;
+        """
+
+        staff_query = """
+            SELECT staff.service_form_staff_id FROM medical_service_form AS form
+                INNER JOIN involved_staff_medical_service_form AS staff
+                ON form.service_form_id = staff.service_form_id
+                WHERE form.service_form_id = %s;
+        """
+
+        delete_staff_query = """
+                    DELETE FROM involved_staff_medical_service_form WHERE service_form_staff_id = %s;
+                """
+
         try:
-            self.cursor.executemany(query, selected_ids)
+            for row_id in selected_ids:
+                # Delete borrowed items
+                self.cursor.execute(items_query, row_id)
+                borrowed_items_ids = self.cursor.fetchall()
+                self.cursor.executemany(delete_item_query, borrowed_items_ids)
+
+                # Delete Supplies
+                self.cursor.execute(supplies_query, row_id)
+                supplies_ids = self.cursor.fetchall()
+                self.cursor.executemany(delete_supplies_query, supplies_ids)
+
+                # Delete Staff
+                self.cursor.execute(staff_query, row_id)
+                supplies_ids = self.cursor.fetchall()
+                self.cursor.executemany(delete_staff_query, supplies_ids)
+
+                self.cursor.execute(query, row_id)
+
             self.controller.connection.commit()
             self.search_records()
             self.controller.add_log(f"Deleted the following service form IDs from {self._TABLE_NAME}: {selected_ids}")
