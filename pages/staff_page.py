@@ -25,7 +25,7 @@ class StaffPage(tk.Frame):
         staff_id = self.tree.item(selected[0], "values")[0]
 
         # Will open instantly the window from the separate file
-        StaffDetailWindow(self.controller, self, staff_id)
+        StaffDetailWindow(self.controller, self, staff_id, True)
 
     def delete_selected(self):
         rows = self.tree.selection()
