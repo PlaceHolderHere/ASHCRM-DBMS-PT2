@@ -1,6 +1,5 @@
 import tkinter as tk
 from database_connection import create_database_connection, get_env_variables
-from tkinter import messagebox
 import globals
 from datetime import datetime
 from qr_scanner import QRScanner
@@ -21,6 +20,7 @@ class App:
         # Tkinter Initialization
         self.root = tk.Tk()
         self.root.title("ASHCRM")
+        self.root.resizable(False, False)
         self.center_window()
         globals.init_ttk_styles()
         self.qr_scanner = QRScanner(self.root)
@@ -34,7 +34,6 @@ class App:
 
         # Run a function when the user:
         self.root.protocol("WM_DELETE_WINDOW", self.close_app) # Closes the window
-        self.root.bind("<Configure>", self.on_configure) # Resizing the window
 
     def add_log(self, message: str) -> None:
         current_time = datetime.now()
@@ -74,28 +73,6 @@ class App:
         self.connection.close()
         self.qr_scanner.stop_camera()
         self.root.destroy()  # close the window
-
-    def on_configure(self, event: tk.Event) -> None:
-        if event.widget != self.root:
-            return
-
-        # Checking if the window has been resized
-        new_window_width: int = event.width
-        new_window_height: int = event.height
-        if new_window_width == globals.window_width and globals.window_height == new_window_height:
-            return
-
-        # Runs on_resize() if the window hasnt been resized after 250ms
-        if self._resize_timer is not None:
-            self.root.after_cancel(self._resize_timer)
-
-        self._resize_timer = self.root.after(250, lambda : self.on_resize(new_window_width, new_window_height))
-
-    def on_resize(self, window_width: int, window_height: int) -> None:
-        globals.window_width = window_width
-        globals.window_height = window_height
-        globals.viewWidth = globals.window_width / 100
-        globals.viewHeight = globals.window_height / 100
 
     def center_window(self):
         self.root.update_idletasks()

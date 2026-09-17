@@ -536,7 +536,7 @@ class QRScannerPopUp(tk.Toplevel):
             # If a QR code was scanned successfully
             if qr_data:
                 self.parent.scanned_qr = qr_data
-                StudentDetailWindow(self.controller, self.parent, qr_data)
+                StudentDetailWindow(self.controller, self.parent, qr_data, True)
                 self.close()
                 return
 
@@ -1107,7 +1107,7 @@ class StudentDetailWindow(tk.Toplevel):
                 )
                 self.student_id_label.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
 
-            if self.can_edit:
+            elif self.can_edit:
                 if key == "date_of_birth":
                     dob_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
                     dob_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))

@@ -23,8 +23,6 @@ BACKGROUND_COLOR = "#ffffff"
 HEADER_COLOR = "#627e8f"
 window_width: int = 1280
 window_height: int = 720
-viewWidth: float = window_width / 100
-viewHeight: float = window_height / 100
 pages = {
     "HOME": HomePage,
     "LOGIN": LogInPage,

@@ -174,9 +174,3 @@ class LogInPage(tk.Frame):
             messagebox.showinfo("Login Successful", f"Welcome {username}")
         else:
             messagebox.showerror("Login Failed", "Invalid username or password.")
-
-    def fetch_authentication_data(self):
-        ...
-
-    def verify_password(self, password: str) -> bool:
-        ...
