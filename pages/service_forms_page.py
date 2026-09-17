@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
@@ -640,9 +641,18 @@ class ServiceFormDetailWindow(tk.Toplevel):
 
 class CreateServiceFormPopUp(tk.Toplevel):
     month_map = {
-        "January": "01", "February": "02", "March": "03", "April": "04",
-        "May": "05", "June": "06", "July": "07", "August": "08",
-        "September": "09", "October": "10", "November": "11", "December": "12"
+        "January": "01",
+        "February": "02",
+        "March": "03",
+        "April": "04",
+        "May": "05",
+        "June": "06",
+        "July": "07",
+        "August": "08",
+        "September": "09",
+        "October": "10",
+        "November": "11",
+        "December": "12",
     }
 
     def __init__(self, controller, parent):
@@ -652,10 +662,14 @@ class CreateServiceFormPopUp(tk.Toplevel):
 
         # Window Configuration
         self.title("Add Medical Service Form")
-        self.geometry(f"{globals.window_width // 2}x{int(globals.window_height * 0.7)}")
+        self.geometry(
+            f"{int(globals.window_width // 1.5)}x{int(globals.window_height // 1.5)}"
+        )
         self.resizable(False, False)
 
-        x, y = controller.get_screen_center(globals.window_width // 2, int(globals.window_height * 0.7))
+        x, y = controller.get_screen_center(
+            int(globals.window_width // 1.5), int(globals.window_height // 1.5)
+        )
         self.geometry(f"+{x}+{y}")
 
         self.transient(controller.root)
@@ -669,13 +683,13 @@ class CreateServiceFormPopUp(tk.Toplevel):
             self,
             bg=globals.BACKGROUND_COLOR,
             highlightthickness=0,
-            bd=0
+            bd=0,
         )
         scrollbar = ttk.Scrollbar(
             self,
             orient="vertical",
             command=canvas.yview,
-            style="SCROLL.TScrollbar"
+            style="SCROLL.TScrollbar",
         )
         canvas.configure(yscrollcommand=scrollbar.set)
 
@@ -683,15 +697,17 @@ class CreateServiceFormPopUp(tk.Toplevel):
         canvas.pack(side="left", fill="both", expand=True)
 
         container = tk.Frame(canvas, bg=globals.BACKGROUND_COLOR)
-        canvas_window = canvas.create_window((0, 0), window=container, anchor="nw")
+        canvas_window = canvas.create_window(
+            (0, 0), window=container, anchor="nw"
+        )
 
         container.bind(
             "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
         )
         canvas.bind(
             "<Configure>",
-            lambda e: canvas.itemconfig(canvas_window, width=e.width)
+            lambda e: canvas.itemconfig(canvas_window, width=e.width),
         )
 
         # TITLE
@@ -700,7 +716,7 @@ class CreateServiceFormPopUp(tk.Toplevel):
             text="ADD MEDICAL SERVICE FORM",
             font=("Arial", 20, "bold"),
             background=globals.BACKGROUND_COLOR,
-            foreground=globals.ACCENT_COLOR
+            foreground=globals.ACCENT_COLOR,
         )
         title.pack(pady=(15, 5))
 
@@ -710,13 +726,9 @@ class CreateServiceFormPopUp(tk.Toplevel):
             text="Service Form Details",
             padx=16,
             pady=16,
-            background=globals.BACKGROUND_COLOR
+            background=globals.BACKGROUND_COLOR,
         )
-        form_frame.pack(
-            fill="x",
-            padx=20,
-            pady=4
-        )
+        form_frame.pack(fill="x", padx=20, pady=4)
 
         month_names = list(self.month_map.keys())
         days = [f"{i:02d}" for i in range(1, 32)]
@@ -726,11 +738,14 @@ class CreateServiceFormPopUp(tk.Toplevel):
 
         form_entries = [
             "STUDENT ID",
-            "STAFF ID",
+            "APPROVING STAFF ID",
+            "INVOLVED STAFF IDS",
+            "MEDICAL EQUIPMENT IDS",
+            "MEDICAL SUPPLIES IDS",
             "DATE",
             "TIME START",
             "TIME END",
-            "PURPOSE"
+            "PURPOSE",
         ]
 
         self.entry_widgets = {}
@@ -745,17 +760,23 @@ class CreateServiceFormPopUp(tk.Toplevel):
                 text=label.title(),
                 font=("Helvetica", 11, "bold"),
                 foreground=globals.ACCENT_COLOR,
-                background=globals.BACKGROUND_COLOR
+                background=globals.BACKGROUND_COLOR,
             ).grid(
                 row=row,
                 column=column * num_of_cols,
                 sticky="w",
-                pady=8
+                pady=8,
             )
 
             if label == "DATE":
                 date_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
-                date_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+                date_frame.grid(
+                    row=row,
+                    column=(column * num_of_cols) + 1,
+                    sticky="w",
+                    pady=8,
+                    padx=(4, 16),
+                )
 
                 self.apt_month = tk.StringVar(value="January")
                 self.apt_day = tk.StringVar(value="01")
@@ -788,7 +809,13 @@ class CreateServiceFormPopUp(tk.Toplevel):
 
             elif label in ["TIME START", "TIME END"]:
                 time_frame = tk.Frame(form_frame, bg=globals.BACKGROUND_COLOR)
-                time_frame.grid(row=row, column=(column * num_of_cols) + 1, sticky="w", pady=8, padx=(4, 16))
+                time_frame.grid(
+                    row=row,
+                    column=(column * num_of_cols) + 1,
+                    sticky="w",
+                    pady=8,
+                    padx=(4, 16),
+                )
 
                 if label == "TIME START":
                     self.start_hour = tk.StringVar(value="08")
@@ -799,24 +826,39 @@ class CreateServiceFormPopUp(tk.Toplevel):
                     self.end_min = tk.StringVar(value="00")
                     h_var, m_var = self.end_hour, self.end_min
 
-                ttk.Combobox(time_frame, textvariable=h_var, values=hours, state="readonly", width=4,
-                             style="dropdown.TCombobox").pack(side="left", padx=(0, 2))
-                tk.Label(time_frame, text=":", bg=globals.BACKGROUND_COLOR, font=("Helvetica", 11, "bold")).pack(
-                    side="left")
-                ttk.Combobox(time_frame, textvariable=m_var, values=minutes, state="readonly", width=4,
-                             style="dropdown.TCombobox").pack(side="left")
+                ttk.Combobox(
+                    time_frame,
+                    textvariable=h_var,
+                    values=hours,
+                    state="readonly",
+                    width=4,
+                    style="dropdown.TCombobox",
+                ).pack(side="left", padx=(0, 2))
+                tk.Label(
+                    time_frame,
+                    text=":",
+                    bg=globals.BACKGROUND_COLOR,
+                    font=("Helvetica", 11, "bold"),
+                ).pack(side="left")
+                ttk.Combobox(
+                    time_frame,
+                    textvariable=m_var,
+                    values=minutes,
+                    state="readonly",
+                    width=4,
+                    style="dropdown.TCombobox",
+                ).pack(side="left")
 
             else:
                 self.entry_widgets[label] = ttk.Entry(
-                    form_frame,
-                    style="ENTRY.TEntry"
+                    form_frame, style="ENTRY.TEntry"
                 )
                 self.entry_widgets[label].grid(
                     row=row,
                     column=(column * num_of_cols) + 1,
                     sticky="w",
                     pady=8,
-                    padx=(4, 16)
+                    padx=(4, 16),
                 )
 
         # BUTTONS
@@ -829,7 +871,7 @@ class CreateServiceFormPopUp(tk.Toplevel):
             text="Cancel",
             command=self.on_close_attempt,
             style="BTN.TButton",
-            cursor="hand2"
+            cursor="hand2",
         ).grid(row=0, column=0, padx=5)
 
         # SUBMIT
@@ -838,7 +880,7 @@ class CreateServiceFormPopUp(tk.Toplevel):
             text="Submit",
             command=self.add_service_form_record,
             style="BTN.TButton",
-            cursor="hand2"
+            cursor="hand2",
         ).grid(row=0, column=1, padx=5)
 
         # CLEAR FIELDS
@@ -847,15 +889,27 @@ class CreateServiceFormPopUp(tk.Toplevel):
             text="Clear",
             command=self.clear_fields,
             style="BTN_RED.TButton",
-            cursor="hand2"
+            cursor="hand2",
         ).grid(row=0, column=3, padx=5)
 
     def add_service_form_record(self):
         if self.is_form_empty():
-            messagebox.showerror("Form is Empty!", "Error! Form is empty, please fill in the form.")
+            messagebox.showerror(
+                "Form is Empty!",
+                "Error! Form is empty, please fill in the form.",
+            )
             return
 
         data = self.get_form_data()
+
+        query_params = {
+            "STUDENT ID": data["STUDENT ID"],
+            "APPROVING STAFF ID": data["APPROVING STAFF ID"],
+            "TIME START": data["TIME START"],
+            "TIME END": data["TIME END"],
+            "DATE": data["DATE"],
+            "PURPOSE": data["PURPOSE"],
+        }
 
         query = """
                 INSERT INTO medical_service_form (
@@ -868,20 +922,66 @@ class CreateServiceFormPopUp(tk.Toplevel):
                 )
                 VALUES (
                     %(STUDENT ID)s,
-                    %(STAFF ID)s,
+                    %(APPROVING STAFF ID)s,
                     %(TIME START)s,
                     %(TIME END)s,
                     %(DATE)s,
                     %(PURPOSE)s
                 );
                 """
+
+        med_supplies_query = """
+            INSERT INTO medical_supplies_used_service_form (
+                    medical_item_id,
+                    service_form_id,
+                    quantity
+                )
+                VALUES (
+                    %s, %s, %s
+                );
+        """
+
+        involved_staff_query = """
+             INSERT INTO involved_staff_medical_service_form (
+                    service_form_id,
+                    staff_id
+                )
+                VALUES (
+                    %s, %s
+                );
+        """
+
+        medical_equipment_query = """
+            INSERT INTO borrowed_items (
+                    borrow_log_id,
+                    equipment_id
+                )
+                VALUES (
+                    %s, %s
+                );
+        """
+
         try:
-            self.controller.cursor.execute(query, data)
+            self.controller.cursor.execute(query, query_params)
+            form_id = self.controller.cursor.lastrowid
+
+            # Associative Tables
+            for staff_id in data['INVOLVED STAFF IDS']:
+                self.controller.cursor.execute(involved_staff_query, (form_id, staff_id))
+
+            for equipment_id in data['MEDICAL EQUIPMENT IDS']:
+                self.controller.cursor.execute(medical_equipment_query, (form_id, equipment_id))
+
+            for supply_id, quantity in data['MEDICAL SUPPLIES IDS'].items():
+                self.controller.cursor.execute(med_supplies_query, (supply_id, form_id, quantity))
+
             self.controller.connection.commit()
-            self.controller.add_log(f"Added new medical service form for Student ID: {data['STUDENT ID']}.")
+            self.controller.add_log(
+                f"Added new medical service form for Student ID: {data['STUDENT ID']}."
+            )
             messagebox.showinfo(
                 "Success",
-                "Medical service form record has been added successfully."
+                "Medical service form record has been added successfully.",
             )
             self.parent.search_records()
             self.close_window()
@@ -889,8 +989,7 @@ class CreateServiceFormPopUp(tk.Toplevel):
         except mysql.connector.Error as e:
             self.controller.connection.rollback()
             messagebox.showerror(
-                "Database Error",
-                f"Could not add record.\n\n{e}"
+                "Database Error", f"Could not add record.\n\n{e}"
             )
 
     def clear_fields(self):
@@ -908,10 +1007,33 @@ class CreateServiceFormPopUp(tk.Toplevel):
         for entry in self.entry_widgets.values():
             if entry.get().strip():
                 return False
-        return False  # Dropdowns are always populated with default values
+        return True
 
     def get_form_data(self) -> dict:
-        data = {label: entry.get() for label, entry in self.entry_widgets.items()}
+        data = {}
+        tuple_fields = {
+            "INVOLVED STAFF IDS",
+            "MEDICAL EQUIPMENT IDS",
+        }
+
+        for label, entry in self.entry_widgets.items():
+            raw_text = entry.get().strip()
+
+            if label == "MEDICAL SUPPLIES IDS":
+                supplies_dict = {}
+                if raw_text:
+                    for item in raw_text.split(","):
+                        if ":" in item:
+                            k, v = item.split(":", 1)
+                            supplies_dict[k.strip()] = v.strip()
+                data[label] = supplies_dict
+
+            elif label in tuple_fields:
+                data[label] = tuple(
+                    item.strip() for item in raw_text.split(",") if item.strip()
+                )
+            else:
+                data[label] = raw_text
 
         month_num = self.month_map.get(self.apt_month.get(), "01")
         data["DATE"] = f"{self.apt_year.get()}-{month_num}-{self.apt_day.get()}"
@@ -922,7 +1044,7 @@ class CreateServiceFormPopUp(tk.Toplevel):
     def on_close_attempt(self):
         if self.is_form_empty() or messagebox.askokcancel(
             "Do you wish to close this window?",
-            "Are you sure you want to close this window? Any data you have inputted will not be saved"
+            "Are you sure you want to close this window? Any data you have inputted will not be saved",
         ):
             self.close_window()
 
