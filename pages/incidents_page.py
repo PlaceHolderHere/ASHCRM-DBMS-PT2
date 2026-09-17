@@ -533,10 +533,6 @@ class IncidentDetailWindow(tk.Toplevel):
         except mysql.connector.Error as e:
             messagebox.showerror("Database Error", f"Could not fetch staff details.\n\n{e}")
 
-    def on_close(self):
-        self.grab_release()
-        self.destroy()
-
     def _create_widgets(self):
         canvas = tk.Canvas(self, bg=globals.BACKGROUND_COLOR, highlightthickness=0, bd=0)
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview, style="SCROLL.TScrollbar")
@@ -670,3 +666,96 @@ class IncidentDetailWindow(tk.Toplevel):
                     staff_frame, text=f"Staff ID: {staff_id}", style="BTN.TButton",
                     command=lambda sid=staff_id: self.view_staff_details(sid), cursor="hand2"
                 ).pack(anchor="w", pady=2)
+
+        ttk.Button(container, text="Save", style="BTN_SOLID.TButton", command=self.save_update).pack(
+            pady=16, side="right", padx=(8, 32)
+        )
+        ttk.Button(container, text="Cancel", style="BTN.TButton", command=self.on_close).pack(
+            pady=16, side="right", padx=8
+        )
+
+    def on_close(self):
+        if not self.is_data_changed() or messagebox.askokcancel(
+            "Unsaved Changes",
+            "Are you sure you want to close this window? Any unsaved changes will be lost.",
+        ):
+            self.destroy()
+
+    def save_update(self):
+        if not self.is_data_changed():
+            messagebox.showinfo("No Changes", "No changes were made to save.")
+            return
+
+        data = self.get_entry_data()
+
+        update_query = """
+                    UPDATE incident
+                        SET date = %s,
+                        time = %s,
+                        description = %s,
+                        treatment = %s
+                    WHERE incident_id = %s;
+                """
+
+        try:
+            self.controller.cursor.execute(
+                update_query,
+                (
+                    data.get("date"),
+                    data.get("time"),
+                    data.get("description"),
+                    data.get("treatment"),
+                    self.incident_id,
+                ),
+            )
+
+            self.controller.connection.commit()
+            self.controller.add_log(f"Updated incident record (ID: {self.incident_id}).")
+            messagebox.showinfo("Success", "Incident record updated successfully.")
+
+            if hasattr(self.parent, "search_records"):
+                self.parent.search_records()
+            self.destroy()
+
+        except mysql.connector.Error as e:
+            self.controller.connection.rollback()
+            messagebox.showerror("Database Error", f"Could not update incident record.\n\n{e}")
+
+    def is_data_changed(self):
+        current_data = self.get_entry_data()
+
+        if str(current_data.get("student_id", "")) != str(self.incident_data.get("student_id", "")):
+            return True
+        if current_data.get("date", "") != str(self.incident_data.get("date", "")):
+            return True
+        if current_data.get("time", "") != str(self.incident_data.get("time", "")):
+            return True
+        if current_data.get("description", "") != str(self.incident_data.get("description", "")):
+            return True
+        if current_data.get("treatment", "") != str(self.incident_data.get("treatment", "")):
+            return True
+
+        orig_staff = set(str(s[0]) for s in getattr(self, "staff_ids", []))
+        curr_staff = set(current_data.get("INVOLVED STAFF IDS", ()))
+        if orig_staff != curr_staff:
+            return True
+
+        return False
+
+    def get_entry_data(self):
+        data = {}
+        for label, entry in self.entry_widgets.items():
+            if isinstance(entry, tk.Text):
+                raw_text = entry.get("1.0", tk.END).strip()
+            else:
+                raw_text = entry.get().strip()
+
+            if label == "INVOLVED STAFF IDS":
+                data[label] = tuple(item.strip() for item in raw_text.split(",") if item.strip())
+            else:
+                data[label] = raw_text
+
+        month_num = self.month_map.get(self.apt_month.get(), "01")
+        data["date"] = f"{self.apt_year.get()}-{month_num}-{self.apt_day.get()}"
+        data["time"] = f"{self.time_hour.get()}:{self.time_min.get()}:00"
+        return data
